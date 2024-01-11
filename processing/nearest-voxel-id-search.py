@@ -3,6 +3,7 @@ from scipy.spatial import distance
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 import sys
+from itertools import product
 
 if len(sys.argv) != 2:
     print("Need an extra string to specify which voxel coords file to use")
