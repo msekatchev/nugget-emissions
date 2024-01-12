@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 import sys
 from itertools import product
+from multiprocessing import Pool
 
 if len(sys.argv) != 2:
     print("Need an extra string to specify which voxel coords file to use")
@@ -47,8 +48,8 @@ def process_interval(indexes):
     grid_ids[start:end][improved_indexes] = proposed_min_ids[improved_indexes]
 
 
-grid_batch_size   = 1000
-points_batch_size = 1000
+grid_batch_size   = 5000
+points_batch_size = 5000
 
 # Create grid batches
 batch_counter = np.arange(grid_batch_size, len(grid_c), grid_batch_size)
@@ -62,7 +63,21 @@ grid_batch_intervals     = np.array([[0]+list(batch_counter[0:-1]),   list(batch
 points_counter_intervals = np.array([[0]+list(points_counter[0:-1]), list(points_counter)]).transpose()
 
 print(">> calculating all batch combinations...")
-all_combinations = np.array(list(product(grid_batch_intervals, points_counter_intervals)))
+# all_combinations = np.array(list(product(grid_batch_intervals, points_counter_intervals)))
+def generate_combinations(args):
+    grid_batch_intervals, points_counter_intervals = args
+    return np.array(list(product(grid_batch_intervals, points_counter_intervals)))
+
+# Define the number of processes based on your system's capabilities
+num_processes = 16
+
+# Split the workload
+chunk_size = len(grid_batch_intervals) // num_processes
+chunks = [(grid_batch_intervals[i:i+chunk_size], points_counter_intervals) for i in range(0, len(grid_batch_intervals), chunk_size)]
+
+# Use multiprocessing Pool to parallelize the combination generation
+with Pool(processes=num_processes) as pool:
+    all_combinations = np.concatenate(pool.map(generate_combinations, chunks))
 
 # with multithreading
 print(f">> grid batch max: {len(grid_c)} \t points batch max: {non_empty_points_length}")
