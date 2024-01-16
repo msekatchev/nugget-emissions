@@ -16,7 +16,7 @@ name = sys.argv[1]
 location_grid_coords = "../data/FIRE/grid-coords.npy"
 location_non_empty_voxel_coords = "../data/FIRE/non-empty-coords-"+name+".npy"
 # name = location_non_empty_voxel_coords[30:][0:location_non_empty_voxel_coords[30:].rfind(".")]
-location_save_grid_ids = "../data/FIRE/grid-ids---"+name+".npy"
+location_save_grid_ids = "../data/FIRE/grid-ids-----"+name+".npy"
 
 print(f">> loading in voxel grid coordinates...")
 grid_c = np.load(location_grid_coords)
@@ -48,8 +48,8 @@ def process_interval(indexes):
     grid_ids[start:end][improved_indexes] = proposed_min_ids[improved_indexes]
 
 
-grid_batch_size   = 5000
-points_batch_size = 5000
+grid_batch_size   = 20000#10000 # 3000
+points_batch_size = 20000#10000 # 4000
 
 # Create grid batches
 batch_counter = np.arange(grid_batch_size, len(grid_c), grid_batch_size)
