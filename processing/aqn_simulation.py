@@ -386,6 +386,7 @@ def simulate_signal(m_aqn_kg):
                          "hot":      T_aqn_hot_ev}
 
         spectral_spatial_emissivity = func(n_cold,n_warm,n_warm_hot,n_hot, frequency_band)
+        print(np.min(spectral_spatial_emissivity), np.max(spectral_spatial_emissivity))
         #print(np.shape(func(n_cold,n_warm,n_warm_hot,n_hot, frequency_band)))
     #F_tot_erg_hz_cm2 = calc_F_tot("NFW Profile", "Constant VM density", 0.6,50, dl = 0.5 * u.kpc, NSIDE = 2**6)
     #F_tot_erg_hz_cm2 = calc_F_tot("NFW Profile", "Gas Components", 0.6,50, dl = 0.5 * u.kpc)
