@@ -96,12 +96,22 @@ def T_AQN_numerical(n_bar, Dv, f, g):
 
 
 
+# simple h function without array operations
+# def h(x):
+#     if x < 1:
+#         return (17 - 12*np.log(x/2))
+#     else:
+#         return (17 + 12*np.log(2))
 
+# h function with array operations
+h_func_cutoff = 17 + 12*np.log(2)
 def h(x):
-    if x < 1:
-        return (17 - 12*np.log(x/2))
-    else:
-        return (17 + 12*np.log(2))
+    return_array = np.copy(x)
+    return_array[np.where(x<1)] = (17 - 12*np.log(x[np.where(x<1)]/2))
+    return_array[np.where(x>=1)] = h_func_cutoff
+    return return_array
+
+
 
 
 # def h(x):
@@ -142,3 +152,7 @@ def spectral_spatial_emissivity(n_AQN, n_bar, Dv, f, g, nu):
     #T_AQN = 1 * u.eV
     dFdw = spectral_surface_emissivity(nu, T_AQN)
     return dFdw * 4 * np.pi * R_AQN**2 * n_AQN.to(1/u.cm**3)
+
+
+
+

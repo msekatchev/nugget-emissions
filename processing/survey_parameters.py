@@ -35,8 +35,13 @@ skymap_units = u.Jy
 #     #                                                                      ^^^^^^^ this comes from using hbar instead of h in the conversion.
 #     return F_erg_hz_cm2 * C
 
+# def convert_to_skymap_units(F_erg_hz_cm2,nu):
+#     erg_hz_cm2 = 1*u.erg/u.s/u.Hz/u.cm**2
+#     C = erg_hz_cm2.to(skymap_units)
+#     return F_erg_hz_cm2 * C / erg_hz_cm2
+
 def convert_to_skymap_units(F_erg_hz_cm2,nu):
     erg_hz_cm2 = 1*u.erg/u.s/u.Hz/u.cm**2
     C = erg_hz_cm2.to(skymap_units)
-    return F_erg_hz_cm2 * C / erg_hz_cm2
+    return (F_erg_hz_cm2 * C / erg_hz_cm2).to(u.mK, equivalencies = u.brightness_temperature(nu))
 #################################################################
