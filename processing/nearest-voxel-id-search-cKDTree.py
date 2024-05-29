@@ -10,10 +10,10 @@ if len(sys.argv) != 2:
 # example: ioni_gas
 name = sys.argv[1]
 
-location_grid_coords = "../data/FIRE/grid-coords.npy"
-location_non_empty_voxel_coords = "../data/FIRE/non-empty-coords-"+name+".npy"
+location_grid_coords = "../data/FIRE/grid-coords-uv.npy"
+location_non_empty_voxel_coords = "../data/FIRE/non-empty-coords-"+name+"-uv.npy"
 # name = location_non_empty_voxel_coords[30:][0:location_non_empty_voxel_coords[30:].rfind(".")]
-location_save_grid_ids = "../data/FIRE/grid-ids--"+name+"-cKDTree.npy"
+location_save_grid_ids = "../data/FIRE/grid-ids--"+name+"-cKDTree-uv.npy"
 
 print(f">> loading in voxel grid coordinates...")
 grid_c = np.load(location_grid_coords)
