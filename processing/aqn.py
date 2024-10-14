@@ -105,13 +105,19 @@ def T_AQN_numerical(n_bar, Dv, f, g):
 
 # h function with array operations
 h_func_cutoff = 17 + 12*np.log(2)
+# def h(x):
+#     return_array = np.copy(x)
+#     return_array[np.where(x<1)] = (17 - 12*np.log(x[np.where(x<1)]/2))
+#     return_array[np.where(x>=1)] = h_func_cutoff
+#     return return_array
+
+# updated function below accounts for 0 X values
 def h(x):
     return_array = np.copy(x)
-    return_array[np.where(x<1)] = (17 - 12*np.log(x[np.where(x<1)]/2))
+    return_array[np.where(x<=0)] = 0
+    return_array[np.where((x<1) & (x>0))] = (17 - 12*np.log(x[np.where(x<1)]/2))
     return_array[np.where(x>=1)] = h_func_cutoff
-    return return_array
-
-
+    return return_array / return_array
 
 
 # def h(x):
@@ -131,13 +137,23 @@ m_e_eV  = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg * erg_to_eV  # mass of electr
 # erg Hz^-1 s^-1 cm^-2
 # nu Hz
 # T eV
+# def spectral_surface_emissivity(nu, T):
+#     T = T * eV_to_erg
+#     w = 2 * np.pi * nu * Hz_to_erg
+#     unit_factor = (1 / cst.hbar.cgs) * (1/(cst.hbar.cgs * cst.c.cgs))**2 * (cst.hbar.cgs * 1/u.Hz * 1/u.s)
+#     #                ^ 1/seconds           ^ 1/area                          ^ 1/frequency and energy
+#     return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * (1 + w/T) * np.exp(- w/T) * h(w/T)
+
+# updated function below accounts for 0 T values:
 def spectral_surface_emissivity(nu, T):
     T = T * eV_to_erg
     w = 2 * np.pi * nu * Hz_to_erg
     unit_factor = (1 / cst.hbar.cgs) * (1/(cst.hbar.cgs * cst.c.cgs))**2 * (cst.hbar.cgs * 1/u.Hz * 1/u.s)
     #                ^ 1/seconds           ^ 1/area                          ^ 1/frequency and energy
-    return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * (1 + w/T) * np.exp(- w/T) * h(w/T)
+    X = w/T
+    X[T<=0] = 0
 
+    return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * (1 + X) * np.exp(- X) * h(X)
 
 
 # erg Hz^-1 s^-1 cm^-3
