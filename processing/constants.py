@@ -30,6 +30,7 @@ eVinv_to_cm = 1/cm_to_eVinv
 1/u.GeV*GeVinv_to_cm  #  1 GeV^(-1) in cm
 g_to_GeV = cst.c.cgs.value**2/(1e7*cst.e.si.value*1e9)*u.GeV/u.g
 GeV_to_g = 1/g_to_GeV
+kg_to_eV = g_to_GeV.to(u.eV/u.kg)
 
 invcm_to_erg = 1/cm_to_GeVinv * GeV_to_erg
 
@@ -50,6 +51,8 @@ def calc_R_AQN(m):
 
 # ----------------------------- constants ----------------------------- 
 
+photon_units =  1*u.photon / u.cm**2 / u.s / u.Angstrom
+erg_hz_cm2   = 1*u.erg/u.s/u.Hz/u.cm**2
 
 m_e_eV  = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg * erg_to_eV  # mass of electron    in eV
 m_e_erg = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg              # mass of electron    in erg

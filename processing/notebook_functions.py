@@ -15,7 +15,7 @@ from aqn_simulation import *
 import sys
 sys.path.append('../analysis')
 
-from mcmc_models import *
+# from mcmc_models import *
 
 import logging
 
@@ -37,7 +37,7 @@ if not logger.hasHandlers():
     logger.addHandler(ch)
 
 # Example debug log messages
-logger.debug('This is a debug message')
+# logger.debug('This is a debug message')
 
 def save_class(c, location, name):
     with open(location + name + ".pkl", 'wb') as file:
