@@ -521,3 +521,70 @@ def import_cubes(reference=False, location="../data/FIRE/"):
     return cubes
 
 
+
+def epsilon_parameter_relations_study(quant, m_aqn_kg, frequency_band):
+    parameter_relations_save_location = "../visuals/parameter_relations/"
+
+    velocity_array = np.linspace(1e-4, 1e-1, 10)
+    epsilon_array = parameter_variation(quant, m_aqn_kg, frequency_band, "dv_ioni", velocity_array)
+
+    fig, ax = plot_parameter_variation(r"$\Delta v$", r"$\epsilon$", velocity_array, epsilon_array)
+    plot_scaling_relation(ax, velocity_array, 13/7, np.min(epsilon_array))
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.legend()
+    plt.savefig(parameter_relations_save_location+"epsilon_vs_dv.png", bbox_inches="tight")
+    plt.show()
+
+    ioni_gas_array = np.linspace(1e-4, 1e-1, 10) * 1/u.cm**3
+    epsilon_array = parameter_variation(quant, m_aqn_kg, frequency_band, "ioni_gas", ioni_gas_array)
+
+    fig, ax = plot_parameter_variation(r"$n_{ion}$", r"$\epsilon$", ioni_gas_array, epsilon_array)
+    plot_scaling_relation(ax, ioni_gas_array, 13/7, np.min(epsilon_array))
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.legend()
+    plt.savefig(parameter_relations_save_location+"epsilon_vs_ioni_gas.png", bbox_inches="tight")
+    plt.show()
+
+    m_aqn_kg_array = np.linspace(1e-4, 1e-1, 10) * u.kg
+    epsilon_array = parameter_variation(quant, m_aqn_kg, frequency_band, "aqn_mass", m_aqn_kg_array, True)
+
+    fig, ax = plot_parameter_variation(r"$m_{aqn}$", r"$\epsilon$", m_aqn_kg_array, epsilon_array)
+    plot_scaling_relation(ax, m_aqn_kg_array, 19/21, np.min(epsilon_array))
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.legend()
+    plt.savefig(parameter_relations_save_location+"epsilon_vs_m_aqn.png", bbox_inches="tight")
+    plt.show()
+
+
+def parameter_variation(quant, m_aqn_kg, frequency_band, parameter_name, parameter_array, mass_variation = False):
+    parameter_array_length = len(parameter_array)
+
+    epsilon_array = np.zeros(parameter_array_length) * epsilon_units
+
+    if not mass_variation:
+        for i, parameter in enumerate(parameter_array):
+            quant[parameter_name] = parameter
+            epsilon_array[i] = compute_epsilon_ionized(quant, m_aqn_kg, frequency_band)["aqn_emit"]
+    else:
+        for i, parameter in enumerate(parameter_array):
+            epsilon_array[i] = compute_epsilon_ionized(quant, parameter, frequency_band)["aqn_emit"]
+
+    return epsilon_array
+
+def plot_parameter_variation(parameter1_name, parameter2_name, parameter1_array, parameter2_array):
+    fig, ax = plt.subplots(dpi=200)
+    ax.plot(parameter1_array, parameter2_array, label="Value")
+    ax.set_xlabel(parameter1_name, size=16)
+    ax.set_ylabel(parameter2_name, size=16)
+    
+    return fig, ax 
+
+def plot_scaling_relation(ax, parameter_array, scaling_power, scaling_constant):
+    scaled_parameter = parameter_array**scaling_power
+    scaled_parameter = scaling_constant * scaled_parameter / scaled_parameter[0] * 10
+    print(scaling_constant)
+    print(scaled_parameter)
+    ax.plot(parameter_array, scaled_parameter, label=f"Scaling")

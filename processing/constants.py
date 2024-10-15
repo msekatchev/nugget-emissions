@@ -51,8 +51,9 @@ def calc_R_AQN(m):
 
 # ----------------------------- constants ----------------------------- 
 
-photon_units =  1*u.photon / u.cm**2 / u.s / u.Angstrom
+photon_units =  1*u.photon / u.cm**2 / u.s / u.Angstrom / u.sr
 erg_hz_cm2   = 1*u.erg/u.s/u.Hz/u.cm**2
+epsilon_units = 1*u.photon / u.cm**3 / u.s / u.Angstrom
 
 m_e_eV  = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg * erg_to_eV  # mass of electron    in eV
 m_e_erg = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg              # mass of electron    in erg
@@ -65,6 +66,9 @@ f  = 1/10                                                   # factor to account 
 g  = 1/10                                                   # (1-g) of total annihilation energy is thermalized     
 Dv = 0.00013835783 * u.dimensionless_unscaled               # speed of nugget through visible matter
 Dv = 10**-3 * u.dimensionless_unscaled
+
+# This is only added for the /sr dependence of the units
+dOmega = 1*u.sr
 
 # n_bar = 1 * 1/u.cm**3
 # n_AQN = 1.67*10**-24 * 1/u.cm**3

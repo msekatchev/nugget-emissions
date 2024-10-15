@@ -117,7 +117,11 @@ def h(x):
     return_array[np.where(x<=0)] = 0
     return_array[np.where((x<1) & (x>0))] = (17 - 12*np.log(x[np.where(x<1)]/2))
     return_array[np.where(x>=1)] = h_func_cutoff
-    return return_array / return_array
+    return return_array
+
+
+# def h(x):
+#     return x.copy()
 
 
 # def h(x):
@@ -170,5 +174,38 @@ def spectral_spatial_emissivity(n_AQN, n_bar, Dv, f, g, nu):
     return dFdw * 4 * np.pi * R_AQN**2 * n_AQN.to(1/u.cm**3)
 
 
+def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
+    dnu = frequency_band[1] - frequency_band[0]
+    nu_range = np.max(frequency_band) - np.min(frequency_band)
 
+    cubes = cubes_import.copy()
+    # dark_mat, ioni_gas, neut_gas, temp_ion, dv_ioni, dv_neut = \
+    # cubes["dark_mat"], cubes["ioni_gas"], cubes["neut_gas"], cubes["temp_ion"], cubes["dv_ioni"], cubes["dv_neut"]
 
+    R_aqn_cm = calc_R_AQN(m_aqn_kg)
+
+    # compute effective gas temperature
+    cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+
+    # compute AQN temperature
+    cubes["t_aqn_i"] = T_AQN_ionized2(  cubes["ioni_gas"], cubes["dv_ioni"], f, g, 
+                                        cubes["temp_ion"], R_aqn_cm)
+    
+    # from erg/s/Hz/cm2 to photons/s/A/cm2
+    def to_skymap_units(F_erg_hz_cm2,nu):
+
+        w = nu.to(u.AA, equivalencies=u.spectral())
+        C = (erg_hz_cm2).to(photon_units*u.sr, u.spectral_density(w))
+
+        return F_erg_hz_cm2 * C / erg_hz_cm2 * 2*np.pi
+
+    cubes["aqn_emit"] = np.zeros(np.shape(cubes["t_aqn_i"])) * photon_units
+    
+    for nu in frequency_band:
+        cubes["aqn_emit"] += to_skymap_units(spectral_surface_emissivity(nu, 
+                           cubes["t_aqn_i"])/(dOmega)*dnu/nu_range, nu)        
+
+    cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
+                       (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
+
+    return cubes
