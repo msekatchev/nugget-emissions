@@ -6,9 +6,6 @@ from constants import *
 from notebook_functions import *
 from survey_parameters import *
 
-
-
-
 # specify frequency resolution and create frequency band array
 # Change frequency range within survey_parameters.py
 dnu = 1e14*u.Hz # 1e9 for WMAP, 1e14 for GALEX
