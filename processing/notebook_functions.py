@@ -559,19 +559,47 @@ def epsilon_parameter_relations_study(quant, m_aqn_kg, frequency_band):
     plt.savefig(parameter_relations_save_location+"epsilon_vs_t_gas.png", bbox_inches="tight")
     plt.show()
 
-def t_aqn_parameter_relations_study(quant, m_aqn_kg, frequency_band):
+
+
+###############################################################################
+def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     parameter_relations_save_location = "../visuals/parameter_relations/"
 
+    quant = quant_original.copy()
+
     velocity_array = np.linspace(20, 800, 100) * u.km/u.s
-    epsilon_array = parameter_variation_t_aqn(quant, m_aqn_kg, frequency_band, "dv_ioni", velocity_array)
-    epsilon_array = epsilon_array / K_to_eV
-    fig, ax = plot_parameter_variation(r"$\Delta v$ [km/s]", r"$T_{aqn}$", velocity_array, epsilon_array)
-    plot_scaling_relation(ax, velocity_array, 4/7, np.max(epsilon_array))
+    T_AQN_array = np.zeros(len(velocity_array)) * u.K
+    for i in range(len(velocity_array)):
+        T_AQN_array[i] = T_AQN_ionized2(
+            n_bar = 0.01 * 1/u.cm**3,
+            Dv = velocity_array[i] / cst.c.to(u.km/u.s),
+            f = 1,
+            g = 0.1,
+            T_p = 10**4 * u.K * K_to_eV,
+            R = calc_R_AQN((16.7 * u.g).to(u.kg))) / K_to_eV
+
+    fig, ax = plot_parameter_variation(r"$\Delta v$ [km/s]", r"$T_{aqn}$", velocity_array, T_AQN_array)
+    plot_scaling_relation(ax, velocity_array, 4/7, np.max(T_AQN_array))
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.title("T_AQN before dv modification, scaling 4/7 w/ dv")
+    plt.legend()
+    plt.savefig(parameter_relations_save_location+"t_aqn_vs_dv_no_dv.png", bbox_inches="tight")
+    plt.show()
+
+    velocity_array = np.linspace(20, 800, 100) * u.km/u.s
+    T_AQN_array = parameter_variation_t_aqn(quant, m_aqn_kg, frequency_band, "dv_ioni", velocity_array)
+    T_AQN_array = T_AQN_array / K_to_eV
+    fig, ax = plot_parameter_variation(r"$\Delta v$ [km/s]", r"$T_{aqn}$", velocity_array, T_AQN_array)
+    ax.plot(velocity_array, np.min(T_AQN_array) * (velocity_array.value * (1/(1+velocity_array.value**2)**2))**(4/7), label="Scaling")
+    plt.title(r"T_AQN after dv modification, scaling $(dv/(1+dv^2)^2)^{(4/7)}$")
     ax.set_xscale("log")
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_dv.png", bbox_inches="tight")
     plt.show()
+
+    quant = quant_original.copy()
 
     ioni_gas_array = np.linspace(1e-4, 1e-1, 10) * 1/u.cm**3
     epsilon_array = parameter_variation_t_aqn(quant, m_aqn_kg, frequency_band, "ioni_gas", ioni_gas_array)
@@ -584,6 +612,8 @@ def t_aqn_parameter_relations_study(quant, m_aqn_kg, frequency_band):
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_ioni_gas.png", bbox_inches="tight")
     plt.show()
 
+    quant = quant_original.copy()
+
     m_aqn_kg_array = np.linspace(1e-4, 1e-1, 10) * u.kg
     epsilon_array = parameter_variation_t_aqn(quant, m_aqn_kg, frequency_band, "aqn_mass", m_aqn_kg_array, True)
 
@@ -595,16 +625,37 @@ def t_aqn_parameter_relations_study(quant, m_aqn_kg, frequency_band):
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_m_aqn.png", bbox_inches="tight")
     plt.show()
 
-    T_gas_array = np.linspace(1e2, 1e6, 100) * u.K
-    epsilon_array = parameter_variation_t_aqn(quant, m_aqn_kg, frequency_band, "temp_ion", T_gas_array)
+    quant = quant_original.copy()
 
-    fig, ax = plot_parameter_variation(r"$T_{gas}$ [K]", r"$T_{aqn}$", T_gas_array, epsilon_array)
-    plot_scaling_relation(ax, T_gas_array, 8/7, np.min(epsilon_array))
+    T_gas_array = np.linspace(1e2, 1e6, 100) * u.K
+    T_gas_eff_array = np.zeros(len(T_gas_array)) * u.K
+    t_aqn_i_array = np.zeros(len(T_gas_array)) * u.eV
+    for i, T_gas in enumerate(T_gas_array):
+        quant["temp_ion"] = T_gas
+        enforce_units(quant)
+        res = compute_epsilon_ionized(quant, m_aqn_kg, frequency_band)
+        t_aqn_i_array[i] = res["t_aqn_i"]
+        T_gas_eff_array[i] = res["temp_ion_eff"] / K_to_eV
+
+    fig, ax = plot_parameter_variation(r"$T_{gas eff}$ [K]", r"$T_{aqn}$", T_gas_eff_array, t_aqn_i_array)
+    plot_scaling_relation(ax, T_gas_eff_array, -8/7, np.min(t_aqn_i_array))
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.legend()
+    plt.savefig(parameter_relations_save_location+"t_aqn_vs_t_gas_eff.png", bbox_inches="tight")
+    plt.show()
+
+    fig, ax = plot_parameter_variation(r"$T_{gas}$ [K]", r"$T_{aqn}$", T_gas_array, t_aqn_i_array)
+    ax.plot(T_gas_array, np.min(t_aqn_i_array) * (1/( 1/2 * cst.m_p.value * kg_to_eV.value * quant["dv_ioni"].value**2 + \
+                                                T_gas_array.value*K_to_eV.value)**2)**(4/7), label="Scaling")
+    plt.title(r"T_AQN vs T_gas, scaling $T_g\sim (1/(1/2m_pdv^2+T_g)^2)^{(4/7)}$")
     ax.set_xscale("log")
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_t_gas.png", bbox_inches="tight")
     plt.show()
+###############################################################################
+
 
 def parameter_variation(quant, m_aqn_kg, frequency_band, parameter_name, parameter_array, mass_variation = False):
     parameter_array_length = len(parameter_array)
@@ -647,7 +698,7 @@ def plot_parameter_variation(parameter1_name, parameter2_name, parameter1_array,
 
 def plot_scaling_relation(ax, parameter_array, scaling_power, scaling_constant):
     scaled_parameter = parameter_array**scaling_power
-    scaled_parameter = scaling_constant * scaled_parameter / scaled_parameter[0] * 10
+    scaled_parameter = scaling_constant * scaled_parameter / scaled_parameter[0] * 1.5
     ax.plot(parameter_array, scaled_parameter, label=f"Scaling")
 
 

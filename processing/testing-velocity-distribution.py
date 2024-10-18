@@ -30,10 +30,20 @@ sigma_v, v_b = 156, 180
 
 # epsilon_parameter_relations_study(quant, m_aqn_kg, frequency_band)
 
-t_aqn_parameter_relations_study(quant, m_aqn_kg, frequency_band)
 
+###############################################################################
+# Testing with Xunyu's values
 
-print(T_AQN_ionized2(
+n_bar = 0.01 * 1/u.cm**3
+Dv = 220 * u.km/u.s
+f = 1
+g = 0.1
+T_p = 10**4 * u.K
+R = calc_R_AQN((16.7 * u.g).to(u.kg))
+
+print(f"n_bar={n_bar}\nDv={Dv}\nf={f}\ng={g}\nT_p={T_p}\nR={R}")
+
+print(">>\t",T_AQN_ionized2(
     n_bar = 0.01 * 1/u.cm**3,
     Dv = 220 * u.km/u.s / cst.c.to(u.km/u.s),
     f = 1,
@@ -41,7 +51,18 @@ print(T_AQN_ionized2(
     T_p = 10**4 * u.K * K_to_eV,
     R = calc_R_AQN((16.7 * u.g).to(u.kg))))
 
-print(T_AQN_ionized2(
+print("\n\n")
+
+n_bar = 0.01 * 1/u.cm**3
+Dv = 220 * u.km/u.s
+f = 1
+g = 0.1
+T_p = 1.5*10**5 * u.K
+R = calc_R_AQN((16.7 * u.g).to(u.kg))
+
+print(f"n_bar={n_bar}\nDv={Dv}\nf={f}\ng={g}\nT_p={T_p}\nR={R}")
+
+print(">>\t",T_AQN_ionized2(
     n_bar = 0.01 * 1/u.cm**3,
     Dv = 220 * u.km/u.s / cst.c.to(u.km/u.s),
     f = 1,
@@ -49,26 +70,56 @@ print(T_AQN_ionized2(
     T_p = 1.5*10**5 * u.K * K_to_eV,
     R = calc_R_AQN((16.7 * u.g).to(u.kg))))
 
-#### Investigation of T_AQN VS dv
+###############################################################################
 
-velocity_array = np.linspace(20, 800, 100) * u.km/u.s
-T_AQN_array = np.zeros(len(velocity_array)) * u.K
-for i in range(len(velocity_array)):
-    T_AQN_array[i] = T_AQN_ionized2(
-        n_bar = 0.01 * 1/u.cm**3,
-        Dv = velocity_array[i] / cst.c.to(u.km/u.s),
-        f = 1,
-        g = 0.1,
-        T_p = 10**4 * u.K * K_to_eV,
-        R = calc_R_AQN((16.7 * u.g).to(u.kg))) / K_to_eV
+###############################################################################
+# Investigation of T_AQN VS dv, ioni_gas, m_aqn and T_gas_eff
+t_aqn_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
-fig, ax = plot_parameter_variation(r"$\Delta v$ [km/s]", r"$T_{aqn}$", velocity_array, T_AQN_array)
-plot_scaling_relation(ax, velocity_array, 4/7, np.max(T_AQN_array))
-ax.set_xscale("log")
-ax.set_yscale("log")
-plt.legend()
-# plt.savefig(parameter_relations_save_location+"t_aqn_vs_dv.png", bbox_inches="tight")
-plt.show()
+
+
+
+
+# T_AQN_array = np.zeros(len(velocity_array)) * u.K
+# for i, velocity in enumerate(velocity_array):
+#     quant["dv_ioni"] = velocity
+#     enforce_units(quant)
+#     T_AQN_array[i] = compute_epsilon_ionized(quant, m_aqn_kg, frequency_band)["t_aqn_i"] / K_to_eV
+
+
+# fig, ax = plot_parameter_variation(r"$\Delta v$ [km/s]", r"$T_{aqn}$", velocity_array, T_AQN_array)
+# # plot_scaling_relation(ax, velocity_array, 20/7, np.max(T_AQN_array))
+# ax.plot(velocity_array, np.min(T_AQN_array) * (velocity_array.value * (1/(1+velocity_array.value**2)**2))**(4/7), label="Scaling")
+# ax.set_xscale("log")
+# ax.set_yscale("log")
+# plt.title(r"T_AQN after dv modification, scaling $(dv/(1+dv^2)^2)^{(4/7)}$")
+# plt.legend()
+# # plt.savefig(parameter_relations_save_location+"t_aqn_vs_dv.png", bbox_inches="tight")
+# plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # plot_maxwell_boltzmann()
 
