@@ -38,6 +38,7 @@ def T_AQN_ionized(n_bar, Dv, f, g, T_p, R):
 
 
 def T_AQN_ionized2(n_bar, Dv, f, g, T_p, R):
+    f=1
     n_bar_erg = n_bar.to(1/u.cm**3) * 1/cm_to_inverg**3
     return (3/4 * np.pi * (1-g) * f * Dv * 1/cst.alpha**(3/2) * m_p_erg * n_bar_erg * 
             R**2 * cm_to_inverg**2 * 
@@ -114,9 +115,18 @@ h_func_cutoff = 17 + 12*np.log(2)
 # updated function below accounts for 0 X values
 def h(x):
     return_array = np.copy(x)
-    return_array[np.where(x<=0)] = 0
-    return_array[np.where((x<1) & (x>0))] = (17 - 12*np.log(x[np.where(x<1)]/2))
-    return_array[np.where(x>=1)] = h_func_cutoff
+    try:
+        return_array[np.where(x<=0)] = 0
+        return_array[np.where((x<1) & (x>0))] = (17 - 12*np.log(x[np.where(x<1)]/2))
+        return_array[np.where(x>=1)] = h_func_cutoff
+    except:
+        if x < 0:
+            return 0
+        else:
+            if x < 1:
+                return (17 - 12*np.log(x/2))
+            else:
+                return (17 + 12*np.log(2))        
     return return_array
 
 
@@ -149,7 +159,8 @@ m_e_eV  = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg * erg_to_eV  # mass of electr
 #     return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * (1 + w/T) * np.exp(- w/T) * h(w/T)
 
 # updated function below accounts for 0 T values:
-def spectral_surface_emissivity(nu, T):
+def spectral_surface_emissivity(nu_in, T_in):
+    nu, T = nu_in.copy(), T_in.copy()
     T = T * eV_to_erg
     w = 2 * np.pi * nu * Hz_to_erg
     unit_factor = (1 / cst.hbar.cgs) * (1/(cst.hbar.cgs * cst.c.cgs))**2 * (cst.hbar.cgs * 1/u.Hz * 1/u.s)
@@ -179,18 +190,24 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
     nu_range = np.max(frequency_band) - np.min(frequency_band)
 
     cubes = cubes_import.copy()
+    enforce_units(cubes)
     # dark_mat, ioni_gas, neut_gas, temp_ion, dv_ioni, dv_neut = \
     # cubes["dark_mat"], cubes["ioni_gas"], cubes["neut_gas"], cubes["temp_ion"], cubes["dv_ioni"], cubes["dv_neut"]
 
     R_aqn_cm = calc_R_AQN(m_aqn_kg)
+
+    cubes["dark_mat"] = cubes["dark_mat"] * 2/5
 
     # compute effective gas temperature
     cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
 
     # compute AQN temperature
     cubes["t_aqn_i"] = T_AQN_ionized2(  cubes["ioni_gas"], cubes["dv_ioni"], f, g, 
-                                        cubes["temp_ion"], R_aqn_cm)
+                                        cubes["temp_ion_eff"], R_aqn_cm)
     
+    # print(cubes["temp_ion"])
+    # print(cubes["temp_ion_eff"])
+
     # from erg/s/Hz/cm2 to photons/s/A/cm2
     def to_skymap_units(F_erg_hz_cm2,nu):
 
@@ -209,3 +226,21 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
                        (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
 
     return cubes
+
+# Define the function f(v) based on the Maxwell-Boltzmann distribution with a velocity shift v_b
+def f_maxbolt(v, sigma_v=156, v_b=180):
+    # v, sigma_v, v_b = v, sigma_v.value, v_b.value
+    prefactor = 4 * np.pi * v**2 * (1 / (2 * np.pi * sigma_v**2))**(3/2)
+    exponential = np.exp(-(v**2 + v_b**2) / (2 * sigma_v**2))
+    
+    if v_b == 0:
+        return prefactor * np.exp(-v**2 / (2 * sigma_v**2))
+    
+    sinh_term = np.sinh(v * v_b / sigma_v**2) / (v * v_b / sigma_v**2)
+    #with np.errstate(divide='ignore', invalid='ignore'):
+    #    sinh_term = np.sinh(v * v_b / sigma_v**2) / (v * v_b / sigma_v**2)
+    #    sinh_term[v == 0] = 1  # Handle division by zero case
+    
+    return prefactor * exponential * sinh_term
+
+

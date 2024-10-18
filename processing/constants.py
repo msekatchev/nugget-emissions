@@ -82,5 +82,18 @@ dOmega = 1*u.sr
 # R_AQN = 10**(-5) * u.cm
 # m_AQN = 1 * u.g * g_to_GeV
 
+def enforce_units(quant):
+    quant["dark_mat"] = quant["dark_mat"].to(u.kg/u.m**3)
+    quant["ioni_gas"] = quant["ioni_gas"].to(1/u.cm**3)
+    quant["neut_gas"] = quant["neut_gas"].to(1/u.cm**3)
+    if quant["temp_ion"].unit == u.K:
+        quant["temp_ion"] = quant["temp_ion"] * K_to_eV
+    try: 
+        if quant["dv_ioni"].unit != u.dimensionless_unscaled:
+            quant["dv_ioni"] = (quant["dv_ioni"] / cst.c).to(u.dimensionless_unscaled)
+    except:
+        quant["dv_ioni"] = quant["dv_ioni"] * u.dimensionless_unscaled
+    if quant["dv_neut"].unit != u.dimensionless_unscaled:
+        quant["dv_neut"] = (quant["dv_neut"] / cst.c).to(u.dimensionless_unscaled)
 
 
