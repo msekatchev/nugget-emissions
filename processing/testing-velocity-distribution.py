@@ -30,7 +30,7 @@ sigma_v, v_b = 156, 180
 
 # epsilon_parameter_relations_study(quant, m_aqn_kg, frequency_band)
 
-
+# 
 ###############################################################################
 # Testing with Xunyu's values
 
@@ -42,6 +42,7 @@ T_p = 10**4 * u.K
 R = calc_R_AQN((16.7 * u.g).to(u.kg))
 
 print(f"n_bar={n_bar}\nDv={Dv}\nf={f}\ng={g}\nT_p={T_p}\nR={R}")
+print(f"c={cst.c.to(u.km/u.s)}")
 
 print(">>\t",T_AQN_ionized2(
     n_bar = 0.01 * 1/u.cm**3,
@@ -69,6 +70,13 @@ print(">>\t",T_AQN_ionized2(
     g = 0.1,
     T_p = 1.5*10**5 * u.K * K_to_eV,
     R = calc_R_AQN((16.7 * u.g).to(u.kg))))
+
+print("\n\n")
+
+print("Some more constants:")
+print(f"c={cst.c.to(u.km/u.s)}")
+print(f"alpha={cst.alpha}")
+print(f"m_p={m_p_erg}")
 
 ###############################################################################
 
