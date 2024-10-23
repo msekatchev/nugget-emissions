@@ -199,7 +199,7 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
     cubes["dark_mat"] = cubes["dark_mat"] * 2/5
 
     # compute effective gas temperature
-    cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+    cubes["temp_ion_eff"] = cubes["temp_ion"] # + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
 
     # compute AQN temperature
     cubes["t_aqn_i"] = T_AQN_ionized2(  cubes["ioni_gas"], cubes["dv_ioni"], f, g, 
