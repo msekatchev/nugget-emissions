@@ -33,50 +33,73 @@ sigma_v, v_b = 156, 180
 # 
 ###############################################################################
 # Testing with Xunyu's values
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1e4]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([200]) * u.km/u.s,
+}
 
-# n_bar = 0.01 * 1/u.cm**3
-# Dv = 220 * u.km/u.s
-# f = 1
-# g = 0.1
-# T_p = 10**4 * u.K
-# R = calc_R_AQN((16.7 * u.g).to(u.kg))
+m_aqn_kg = 16.7/1000 * u.kg
 
-# print(f"n_bar={n_bar}\nDv={Dv}\nf={f}\ng={g}\nT_p={T_p}\nR={R}")
-# print(f"c={cst.c.to(u.km/u.s)}")
+n_bar = 0.01 * 1/u.cm**3
+Dv = 220 * u.km/u.s
+f = 1
+g = 0.1
+T_p = 10**4 * u.K
+R = calc_R_AQN((16.7 * u.g).to(u.kg))
 
-# print(">>\t",T_AQN_ionized2(
-#     n_bar = 0.01 * 1/u.cm**3,
-#     Dv = 220 * u.km/u.s / cst.c.to(u.km/u.s),
-#     f = 1,
-#     g = 0.1,
-#     T_p = 10**4 * u.K * K_to_eV,
-#     R = calc_R_AQN((16.7 * u.g).to(u.kg))))
+print(f"n_bar={n_bar}\nDv={Dv}\nf={f}\ng={g}\nT_p={T_p}\nR={R}")
+print(f"c={cst.c.to(u.km/u.s)}")
 
-# print("\n\n")
+print(">>\t",T_AQN_ionized2(
+    n_bar = 0.01 * 1/u.cm**3,
+    Dv = 220 * u.km/u.s / cst.c.to(u.km/u.s),
+    f = 1,
+    g = 0.1,
+    T_p = 10**4 * u.K * K_to_eV,
+    R = calc_R_AQN((16.7 * u.g).to(u.kg))))
 
-# n_bar = 0.01 * 1/u.cm**3
-# Dv = 220 * u.km/u.s
-# f = 1
-# g = 0.1
-# T_p = 1.5*10**5 * u.K
-# R = calc_R_AQN((16.7 * u.g).to(u.kg))
+print("----->", compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"] * (0.6*u.kpc).to(u.cm)/(4*np.pi))
 
-# print(f"n_bar={n_bar}\nDv={Dv}\nf={f}\ng={g}\nT_p={T_p}\nR={R}")
+print("\n\n")
 
-# print(">>\t",T_AQN_ionized2(
-#     n_bar = 0.01 * 1/u.cm**3,
-#     Dv = 220 * u.km/u.s / cst.c.to(u.km/u.s),
-#     f = 1,
-#     g = 0.1,
-#     T_p = 1.5*10**5 * u.K * K_to_eV,
-#     R = calc_R_AQN((16.7 * u.g).to(u.kg))))
+n_bar = 0.01 * 1/u.cm**3
+Dv = 220 * u.km/u.s
+f = 1
+g = 0.1
+T_p = 1.5*10**5 * u.K
+R = calc_R_AQN((16.7 * u.g).to(u.kg))
 
-# print("\n\n")
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1.5e5]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([200]) * u.km/u.s,
+}
 
-# print("Some more constants:")
-# print(f"c={cst.c.to(u.km/u.s)}")
-# print(f"alpha={cst.alpha}")
-# print(f"m_p={m_p_erg}")
+print(f"n_bar={n_bar}\nDv={Dv}\nf={f}\ng={g}\nT_p={T_p}\nR={R}")
+
+print(">>\t",T_AQN_ionized2(
+    n_bar = 0.01 * 1/u.cm**3,
+    Dv = 220 * u.km/u.s / cst.c.to(u.km/u.s),
+    f = 1,
+    g = 0.1,
+    T_p = 1.5*10**5 * u.K * K_to_eV,
+    R = calc_R_AQN((16.7 * u.g).to(u.kg))))
+
+print("----->", compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"] * (0.6*u.kpc).to(u.cm)/(4*np.pi))
+
+print("\n\n")
+
+print("Some more constants:")
+print(f"c={cst.c.to(u.km/u.s)}")
+print(f"alpha={cst.alpha}")
+print(f"m_p={m_p_erg}")
 
 ###############################################################################
 
@@ -84,7 +107,7 @@ sigma_v, v_b = 156, 180
 # Investigation of T_AQN VS dv, ioni_gas, m_aqn and T_gas_eff
 # t_aqn_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
-epsilon_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
+# epsilon_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
 
 
