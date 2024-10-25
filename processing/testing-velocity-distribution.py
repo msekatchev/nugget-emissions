@@ -107,7 +107,8 @@ print(f"m_p={m_p_erg}")
 # Investigation of T_AQN VS dv, ioni_gas, m_aqn and T_gas_eff
 # t_aqn_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
-# epsilon_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
+# Investigation of epsilon VS dv, ioni_gas, m_aqn and T_gas_eff
+epsilon_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
 
 

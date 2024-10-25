@@ -54,6 +54,7 @@ def calc_R_AQN(m):
 photon_units =  1*u.photon / u.cm**2 / u.s / u.Angstrom / u.sr
 erg_hz_cm2   = 1*u.erg/u.s/u.Hz/u.cm**2
 epsilon_units = 1*u.photon / u.cm**3 / u.s / u.Angstrom
+epsilon_to_photon = (0.6*u.kpc).to(u.cm)/(4*np.pi)
 
 m_e_eV  = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg * erg_to_eV  # mass of electron    in eV
 m_e_erg = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg              # mass of electron    in erg
