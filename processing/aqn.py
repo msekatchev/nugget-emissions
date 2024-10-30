@@ -133,8 +133,8 @@ def H(x):
     return (1+x)*np.exp(-x)*h(x)
 
 
-# def h(x):
-#     return x.copy()
+def h(x):
+    return x.copy()
 
 
 # def h(x):
@@ -204,12 +204,16 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
     # compute effective gas temperature
     cubes["temp_ion_eff"] = cubes["temp_ion"] # + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
 
+    # print(cubes["temp_ion_eff"])
+
     # compute AQN temperature
     cubes["t_aqn_i"] = T_AQN_ionized2(  cubes["ioni_gas"], cubes["dv_ioni"], f, g, 
                                         cubes["temp_ion_eff"], R_aqn_cm)
     
     # print(cubes["temp_ion"])
     # print(cubes["temp_ion_eff"])
+
+    # cubes["t_aqn_i"] = np.ones(cubes["t_aqn_i"].shape) * u.eV
 
     # from erg/s/Hz/cm2 to photons/s/A/cm2
     def to_skymap_units(F_erg_hz_cm2,nu):
@@ -221,9 +225,14 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
 
     cubes["aqn_emit"] = np.zeros(np.shape(cubes["t_aqn_i"])) * photon_units
     
-    for nu in frequency_band:
-        cubes["aqn_emit"] += to_skymap_units(spectral_surface_emissivity(nu, 
-                           cubes["t_aqn_i"])/(dOmega)*dnu/nu_range, nu)        
+    # for nu in frequency_band:
+    #     cubes["aqn_emit"] += to_skymap_units(spectral_surface_emissivity(nu, 
+    #                        cubes["t_aqn_i"])/(dOmega)*dnu/nu_range, nu)        
+
+    # vvv omit frequency band integration, use mean of frequency band instead: vvv
+    nu_mean = np.mean(frequency_band)
+    cubes["aqn_emit"] = to_skymap_units(spectral_surface_emissivity(nu_mean, 
+                           cubes["t_aqn_i"])/(dOmega), nu_mean) 
 
     cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
                        (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr

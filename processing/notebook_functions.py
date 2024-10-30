@@ -525,6 +525,8 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     epsilon_array = np.zeros(parameter_array_length) * epsilon_units
     t_aqn_i_array = np.zeros(parameter_array_length) * u.eV
 
+    # print(quant["temp_ion"])
+
     for i, parameter in enumerate(velocity_array):
         quant["dv_ioni"] = parameter
         enforce_units(quant)
@@ -537,18 +539,32 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     T = t_aqn_i_array * eV_to_erg
     w = 2 * np.pi * np.mean(frequency_band) * Hz_to_erg
     x = w/T
-
     v = velocity_array
-
     scaling_relation = epsilon_array[0] * (v/(v[0]))**(13/7) * H(x) / H(x[0])
 
+
+    # code below attempts to implement frequency band integration for the scaling relationship
+    # dnu = frequency_band[1] - frequency_band[0]
+    # nu_range = np.max(frequency_band) - np.min(frequency_band)
+    # T = t_aqn_i_array * eV_to_erg
+    # v = velocity_array
+    # scaling_relation = np.zeros(parameter_array_length) * epsilon_units
+    # for nu in frequency_band:
+    #     w = 2 * np.pi * nu * Hz_to_erg
+    #     x = w/T
+    #     scaling_relation += epsilon_array[0] * (v/(v[0]))**(13/7) * H(x) / H(x[0]) * dnu/nu_range
+
+    # print(np.mean(scaling_relation - epsilon_array) * epsilon_to_photon)
+
+    # for i in range(len(velocity_array)):
+    #     print(velocity_array[i].value, (scaling_relation[i]*epsilon_to_photon).value, (epsilon_array[i]*epsilon_to_photon).value)
+    
     plt.plot(velocity_array, scaling_relation*epsilon_to_photon, "--", color="black", label="Scaling")
     plt.title(r"Epsilon, scaling $\Phi\sim \Delta v^{13/7}$")
     ax.set_xscale("log")
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"epsilon_vs_dv.png", bbox_inches="tight")
-    plt.show()
 
     quant = quant_original.copy()
 
@@ -560,7 +576,7 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     x = w/T
 
     scaling_relation = epsilon_array[0] * (ioni_gas_array/ioni_gas_array[0])**(13/7) * H(x) / H(x[0])
-
+    # print(np.mean(scaling_relation - epsilon_array) * epsilon_to_photon)
     fig, ax = plot_parameter_variation(r"$n_{ion}$ [1/cm$^3$]", r"$\Phi$ "+"["+str(photon_units.unit)+"]", ioni_gas_array, 
         epsilon_array*epsilon_to_photon)
     # plot_scaling_relation(ax, ioni_gas_array, 4/7, np.min(T_AQN_array))
@@ -571,7 +587,7 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"epsilon_vs_ioni_gas.png", bbox_inches="tight")
-    plt.show()
+
 
     quant = quant_original.copy()
 
@@ -583,7 +599,7 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     x = w/T
 
     scaling_relation = epsilon_array[0] * (m_aqn_kg_array/m_aqn_kg_array[0])**(19/21) * H(x) / H(x[0])
-
+    # print(np.mean(scaling_relation - epsilon_array) * epsilon_to_photon)
     fig, ax = plot_parameter_variation(r"$m_{aqn}$ [kg]", r"$\Phi$ "+"["+str(photon_units.unit)+"]", m_aqn_kg_array, epsilon_array*epsilon_to_photon)
     plt.plot(m_aqn_kg_array, scaling_relation*epsilon_to_photon, "--", color="black", label="Scaling")
 
@@ -592,7 +608,7 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"epsilon_vs_m_aqn.png", bbox_inches="tight")
-    plt.show()
+
 
     quant = quant_original.copy()
 
@@ -607,23 +623,22 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
         epsilon_array[i] = res["aqn_emit"]
         T_gas_eff_array[i] = res["temp_ion_eff"] / K_to_eV
         t_aqn_i_array[i] = res["t_aqn_i"]
-        print(T_gas, epsilon_array[i])
+        # print(T_gas, epsilon_array[i])
     T = t_aqn_i_array * eV_to_erg
     w = 2 * np.pi * np.mean(frequency_band) * Hz_to_erg
     x = w/T
 
     scaling_relation = epsilon_array[0] * (T_gas_eff_array/T_gas_eff_array[0])**(-26/7) * H(x) / H(x[0])
-
-
+    # print(np.mean(scaling_relation - epsilon_array) * epsilon_to_photon)
     fig, ax = plot_parameter_variation(r"$T_{gas eff}$ [K]", r"$\Phi$ "+"["+str(photon_units.unit)+"]", T_gas_eff_array, epsilon_array*epsilon_to_photon)
     plt.plot(T_gas_eff_array, scaling_relation*epsilon_to_photon, "--", color="black", label="Scaling")
     # plot_scaling_relation(ax, T_gas_eff_array, -8/7, np.min(t_aqn_i_array))
-    plt.title(r"T_AQN vs T_gas_eff, scaling $\Phi\sim T_{g,eff}^{(-26/7)}$")
+    plt.title(r"$\epsilon$ vs T_gas_eff, scaling $\Phi\sim T_{g,eff}^{(-26/7)}$")
     ax.set_xscale("log")
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"epsilon_vs_t_gas_eff.png", bbox_inches="tight")
-    plt.show()
+
 
 
     # m_p_eV = cst.m_p * kg_to_eV
@@ -647,6 +662,7 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     # plt.legend()
     # plt.savefig(parameter_relations_save_location+"t_aqn_vs_t_gas.png", bbox_inches="tight")
     # plt.show()
+    plt.show()
 ###############################################################################
 #_____________________________________________________________________________#
 
@@ -655,6 +671,8 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     parameter_relations_save_location = "../visuals/parameter_relations/"
 
     quant = quant_original.copy()
+
+    enforce_units(quant)
 
     velocity_array = np.linspace(20, 800, 100) * u.km/u.s
     T_AQN_array = np.zeros(len(velocity_array)) * u.eV
@@ -679,7 +697,6 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     plt.title(r"T_AQN before dv modification, scaling $T_{AQN}\sim dv^{(4/7)}$")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_dv_no_dv.png", bbox_inches="tight")
-    plt.show()
 
     velocity_array = np.linspace(20, 800, 100) * u.km/u.s
     T_AQN_array = parameter_variation_t_aqn(quant, m_aqn_kg, frequency_band, "dv_ioni", velocity_array)
@@ -691,8 +708,8 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
         (1/((quant["temp_ion"] + 1/2 * m_p_eV * (v[0])**2)/K_to_eV)**2))**(4/7)
     scaling_relation = T_AQN_array[0] * (v * \
         (1/((quant["temp_ion"]+1/2 * cst.m_p * kg_to_eV * (v)**2)/K_to_eV)**2))**(4/7) / v0
-    plt.plot(velocity_array, scaling_relation, "--", color="black", label="Scaling")
 
+    plt.plot(velocity_array, scaling_relation, "--", color="black", label="Scaling")
     # plt.scatter(quant_original["dv_ioni"]*cst.c.to(u.km/u.s), compute_epsilon_ionized(quant_original, m_aqn_kg, frequency_band)["t_aqn_i"], s=10)
     # ax.plot(velocity_array, np.min(T_AQN_array) * (velocity_array.value * (1/(1+velocity_array.value**2)**2))**(4/7), label="Scaling")
     plt.title(r"T_AQN after dv modification, scaling $T_{AQN}\sim (dv/(T_g+1/2 m_p dv^2)^2)^{(4/7)}$")
@@ -700,7 +717,6 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_dv.png", bbox_inches="tight")
-    plt.show()
 
     quant = quant_original.copy()
 
@@ -718,7 +734,6 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_ioni_gas.png", bbox_inches="tight")
-    plt.show()
 
     quant = quant_original.copy()
 
@@ -738,7 +753,6 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_m_aqn.png", bbox_inches="tight")
-    plt.show()
 
     quant = quant_original.copy()
 
@@ -764,7 +778,6 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_t_gas_eff.png", bbox_inches="tight")
-    plt.show()
 
 
     T_gas_0 = (1/2*m_p_eV*quant["dv_ioni"]**2 + (T_gas_array[0]*K_to_eV))**(-8/7)
@@ -781,6 +794,7 @@ def t_aqn_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     ax.set_yscale("log")
     plt.legend()
     plt.savefig(parameter_relations_save_location+"t_aqn_vs_t_gas.png", bbox_inches="tight")
+
     plt.show()
 ###############################################################################
 #_____________________________________________________________________________#
@@ -798,7 +812,7 @@ def parameter_variation(quant, m_aqn_kg, frequency_band, parameter_name, paramet
             epsilon_array[i] = res["aqn_emit"]
             t_aqn_i_array[i] = res["t_aqn_i" ]
             # print(parameter, epsilon_array[i])
-            print(quant)
+            # print(quant)
     else:
         for i, parameter in enumerate(parameter_array):
             res = compute_epsilon_ionized(quant, parameter, frequency_band)
