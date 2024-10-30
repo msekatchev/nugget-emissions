@@ -122,7 +122,7 @@ quant = {
     'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
     'ioni_gas': np.array([0.01]) * 1/u.cm**3,
     'neut_gas': np.array([0]) * 1/u.cm**3, 
-    'temp_ion': np.array([1e4]) * u.K, 
+    'temp_ion': np.array([1e6]) * u.K, 
     'dv_ioni':  np.array([300]) * u.km/u.s, 
     'dv_neut':  np.array([200]) * u.km/u.s,
 }

@@ -225,14 +225,14 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
 
     cubes["aqn_emit"] = np.zeros(np.shape(cubes["t_aqn_i"])) * photon_units
     
-    # for nu in frequency_band:
-    #     cubes["aqn_emit"] += to_skymap_units(spectral_surface_emissivity(nu, 
-    #                        cubes["t_aqn_i"])/(dOmega)*dnu/nu_range, nu)        
+    for nu in frequency_band:
+        cubes["aqn_emit"] += to_skymap_units(spectral_surface_emissivity(nu, 
+                           cubes["t_aqn_i"])/(dOmega)*dnu/nu_range, nu)        
 
     # vvv omit frequency band integration, use mean of frequency band instead: vvv
-    nu_mean = np.mean(frequency_band)
-    cubes["aqn_emit"] = to_skymap_units(spectral_surface_emissivity(nu_mean, 
-                           cubes["t_aqn_i"])/(dOmega), nu_mean) 
+    # nu_mean = np.mean(frequency_band)
+    # cubes["aqn_emit"] = to_skymap_units(spectral_surface_emissivity(nu_mean, 
+    #                        cubes["t_aqn_i"])/(dOmega), nu_mean) 
 
     cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
                        (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
