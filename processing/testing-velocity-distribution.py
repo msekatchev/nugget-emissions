@@ -37,12 +37,14 @@ quant = {
     'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
     'ioni_gas': np.array([0.01]) * 1/u.cm**3,
     'neut_gas': np.array([0]) * 1/u.cm**3, 
-    'temp_ion': np.array([1e4]) * u.K, 
+    'temp_ion': np.array([1e6]) * u.K, 
     'dv_ioni':  np.array([220]) * u.km/u.s, 
     'dv_neut':  np.array([200]) * u.km/u.s,
 }
 
 m_aqn_kg = 16.7/1000 * u.kg
+
+
 
 # n_bar = 0.01 * 1/u.cm**3
 # Dv = 220 * u.km/u.s
@@ -62,7 +64,6 @@ m_aqn_kg = 16.7/1000 * u.kg
 #     T_p = 10**4 * u.K * K_to_eV,
 #     R = calc_R_AQN((16.7 * u.g).to(u.kg))))
 
-# print("----->", compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"] * (0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 # print("\n\n")
 
@@ -122,10 +123,13 @@ quant = {
     'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
     'ioni_gas': np.array([0.01]) * 1/u.cm**3,
     'neut_gas': np.array([0]) * 1/u.cm**3, 
-    'temp_ion': np.array([1e6]) * u.K, 
-    'dv_ioni':  np.array([300]) * u.km/u.s, 
+    'temp_ion': np.array([1e4]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
     'dv_neut':  np.array([200]) * u.km/u.s,
 }
+
+enforce_units(quant)
+print("----->", compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"] * (0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 # print("Initial temp_ion is::::")
 # print(quant["temp_ion"])
@@ -135,29 +139,62 @@ quant = {
 # t_aqn_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
 # Investigation of epsilon VS dv, ioni_gas, m_aqn and T_gas_eff
-epsilon_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
-
-# T_AQN_array = np.zeros(len(velocity_array)) * u.K
-# for i, velocity in enumerate(velocity_array):
-#     quant["dv_ioni"] = velocity
-#     enforce_units(quant)
-#     T_AQN_array[i] = compute_epsilon_ionized(quant, m_aqn_kg, frequency_band)["t_aqn_i"] / K_to_eV
+# epsilon_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
 
-# fig, ax = plot_parameter_variation(r"$\Delta v$ [km/s]", r"$T_{aqn}$", velocity_array, T_AQN_array)
-# # plot_scaling_relation(ax, velocity_array, 20/7, np.max(T_AQN_array))
-# ax.plot(velocity_array, np.min(T_AQN_array) * (velocity_array.value * (1/(1+velocity_array.value**2)**2))**(4/7), label="Scaling")
-# ax.set_xscale("log")
-# ax.set_yscale("log")
-# plt.title(r"T_AQN after dv modification, scaling $(dv/(1+dv^2)^2)^{(4/7)}$")
-# plt.legend()
-# # plt.savefig(parameter_relations_save_location+"t_aqn_vs_dv.png", bbox_inches="tight")
-# plt.show()
+T_AQN = T_AQN_ionized2(n_bar=quant["ioni_gas"], 
+    Dv=quant["dv_ioni"], 
+    f=1, 
+    g=0.1, 
+    T_p=quant["temp_ion"], 
+    R=calc_R_AQN(m_aqn_kg))
+
+# print(T_AQN)
+from astropy import constants as cst
+from astropy import units as u
+
+T_AQN = 102.1*u.eV
+w = 1500 * u.AA 
+nu = w.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
+L = (0.6*u.kpc).to(u.m)
+R = calc_R_AQN(m_aqn_kg).to(u.m) # 2.25 [m]
+n_AQN = 2/5 * quant["dark_mat"] / m_aqn_kg # 1.28e-20 [1/m**3]
+X = T_AQN.to(u.J)
+C = 8 * cst.alpha**(5/2) / (45*cst.hbar**2*cst.c**2)
+F = C * X**3 * (X/cst.m_e/cst.c**2)**(1/4) * H(2*np.pi*cst.hbar*nu/X)
+Phi = L*R**2*n_AQN*F/(2*np.pi*cst.hbar*w) * (1*u.m/(100*u.cm))**2
+print(Phi)
 
 
+# J_to_eV = (1*u.J).to(u.eV) / u.J
+# m2_to_cm2 = (1*u.m**2).to(u.cm**2) / u.m**2
+# A = 8 * cst.alpha**(5/2) / (45*cst.hbar**2*cst.c**2) * 1/J_to_eV**2
 
+# B = T_AQN**3
 
+# C = (T_AQN/m_e_eV)**(1/4)
 
+# nu = np.mean(frequency_band)
+
+# D = H(2*np.pi*cst.hbar*nu / T_AQN * J_to_eV)
+
+# F = A*B*C*D*eV_to_erg/m2_to_cm2/u.Hz
+
+# print(F)
+
+# w = nu.to(u.AA, equivalencies=u.spectral())
+# C = (erg_hz_cm2).to(photon_units*u.sr, u.spectral_density(w))
+
+# F = F * C / erg_hz_cm2 * 2*np.pi
+
+# L = (0.6*u.kpc).to(u.cm)
+# R = calc_R_AQN(m_aqn_kg)
+
+# print(F*L*R**2*quant["dark_mat"]/m_aqn_kg/(2*np.pi*cst.hbar*J_to_eV*w.to(u.cm)*eV_to_erg/inverg_to_cm)*(1/100*u.m/u.cm)**3)
+
+# print(quant["dark_mat"])
+
+# print(D)
 
 
 
