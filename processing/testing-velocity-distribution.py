@@ -123,9 +123,9 @@ quant = {
     'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
     'ioni_gas': np.array([0.01]) * 1/u.cm**3,
     'neut_gas': np.array([0]) * 1/u.cm**3, 
-    'temp_ion': np.array([1e4]) * u.K, 
+    'temp_ion': np.array([1.5e5]) * u.K, 
     'dv_ioni':  np.array([220]) * u.km/u.s, 
-    'dv_neut':  np.array([200]) * u.km/u.s,
+    'dv_neut':  np.array([0]) * u.km/u.s,
 }
 
 enforce_units(quant)
@@ -150,21 +150,74 @@ T_AQN = T_AQN_ionized2(n_bar=quant["ioni_gas"],
     R=calc_R_AQN(m_aqn_kg))
 
 # print(T_AQN)
-from astropy import constants as cst
-from astropy import units as u
+# from astropy import constants as cst
+# from astropy import units as u
 
-T_AQN = 102.1*u.eV
-w = 1500 * u.AA 
-nu = w.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
+
+
+T_AQN = 4.623*u.eV#102.1*u.eV
+lamb = 1500 * u.AA 
+nu = lamb.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
 L = (0.6*u.kpc).to(u.m)
 R = calc_R_AQN(m_aqn_kg).to(u.m) # 2.25 [m]
 n_AQN = 2/5 * quant["dark_mat"] / m_aqn_kg # 1.28e-20 [1/m**3]
 X = T_AQN.to(u.J)
 C = 8 * cst.alpha**(5/2) / (45*cst.hbar**2*cst.c**2)
 F = C * X**3 * (X/cst.m_e/cst.c**2)**(1/4) * H(2*np.pi*cst.hbar*nu/X)
-Phi = L*R**2*n_AQN*F/(2*np.pi*cst.hbar*w) * (1*u.m/(100*u.cm))**2
+Phi = L*R**2*n_AQN*F/(2*np.pi*cst.hbar*lamb) * (1*u.m/(100*u.cm))**2
 print(Phi)
+print(H(2*np.pi*cst.hbar*nu/X))
 
+
+# h_func_cutoff = 17 + 12*np.log(2)
+# def h(x):
+#     print(x)
+#     return_array = np.copy(x)
+#     try:
+#         return_array[np.where(x<=0)] = 0
+#         return_array[np.where((x<1) & (x>0))] = (17 - 12*np.log(x[np.where(x<1)]/2))
+#         return_array[np.where(x>=1)] = h_func_cutoff
+#     except:
+#         if x < 0:
+#             return 0
+#         else:
+#             if x < 1:
+#                 return (17 - 12*np.log(x/2))
+#             else:
+#                 return (17 + 12*np.log(2))        
+#     return return_array
+
+# def H(x):
+#     return (1+x)*np.exp(-x)*h(x)
+
+# def new_H(x):
+#     if x < 1:
+#         return (1+x)*np.exp(-x)*(17-12*np.log(x/2))
+#     else:
+#         return (1+x)*np.exp(-x)*(17+12*np.log(2))
+
+# def new_h(x):
+#     if x < 1:
+#         return (17-12*np.log(x/2))
+#     else:
+#         return (17+12*np.log(2))
+
+# print(H(2*np.pi*cst.hbar*nu/X), 2*np.pi*cst.hbar*nu/X)
+
+# x_array = np.linspace(0,2, 100)[1:]
+
+# new_H_array = np.zeros(len(x_array))
+# for i in range(len(x_array)):
+#     new_H_array[i] = new_h(x_array[i])
+
+# H_array = h(x_array)
+
+# plt.figure(dpi=200)
+# plt.plot(x_array, H_array, label="original", linewidth=5)
+# plt.plot(x_array, new_H_array, label="new", color="red")
+# plt.legend()
+# print(H_array, new_H_array)
+# plt.show()
 
 # J_to_eV = (1*u.J).to(u.eV) / u.J
 # m2_to_cm2 = (1*u.m**2).to(u.cm**2) / u.m**2

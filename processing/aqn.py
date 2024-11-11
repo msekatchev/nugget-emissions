@@ -129,12 +129,9 @@ def h(x):
                 return (17 + 12*np.log(2))        
     return return_array
 
+
 def H(x):
     return (1+x)*np.exp(-x)*h(x)
-
-
-def h(x):
-    return x.copy()
 
 
 # def h(x):

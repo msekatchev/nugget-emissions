@@ -574,7 +574,7 @@ def epsilon_parameter_relations_study(quant_original, m_aqn_kg, frequency_band):
     # for i in range(len(velocity_array)):
     #     print(velocity_array[i].value, (scaling_relation[i]*epsilon_to_photon).value, (epsilon_array[i]*epsilon_to_photon).value)
     
-    plt.plot(velocity_array, epsilon_array[0]*epsilon_to_photon * scaling_relation / scaling_relation[0], "--", color="black", label="Scaling")
+    # plt.plot(velocity_array, epsilon_array[0]*epsilon_to_photon * scaling_relation / scaling_relation[0], "--", color="black", label="Scaling")
     plt.title(r"Epsilon, scaling $\Phi\sim \Delta v^{13/7}$")
     ax.set_xscale("log")
     ax.set_yscale("log")
