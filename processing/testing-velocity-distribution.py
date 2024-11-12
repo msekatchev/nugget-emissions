@@ -129,7 +129,7 @@ quant = {
 }
 
 enforce_units(quant)
-print("----->", compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"] * (0.6*u.kpc).to(u.cm)/(4*np.pi))
+# print("----->", compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"] * (0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 # print("Initial temp_ion is::::")
 # print(quant["temp_ion"])
@@ -141,141 +141,266 @@ print("----->", compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)[
 # Investigation of epsilon VS dv, ioni_gas, m_aqn and T_gas_eff
 # epsilon_parameter_relations_study(quant.copy(), m_aqn_kg, frequency_band)
 
+'''
+# Xunyu checks:
+print("Checking with Inu maps (22)")
+#============================================================================#
+print("---> Checking T_AQN")
+print("--> First estimate: 102.1 eV")
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1e4]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+}
+enforce_units(quant)
 
-T_AQN = T_AQN_ionized2(n_bar=quant["ioni_gas"], 
+T_AQN = T_AQN_ionized3(
+    n_bar=quant["ioni_gas"], 
+    Dv=quant["dv_ioni"] * cst.c, 
+    f=1, 
+    g=0.1, 
+    T_p=quant["temp_ion"] * eV_to_K, 
+    R=calc_R_AQN(m_aqn_kg))
+print("-> I get, ", T_AQN)
+
+T_AQN = T_AQN_ionized2(
+    n_bar=quant["ioni_gas"], 
     Dv=quant["dv_ioni"], 
     f=1, 
     g=0.1, 
     T_p=quant["temp_ion"], 
     R=calc_R_AQN(m_aqn_kg))
+print("-> I get, ", T_AQN)
 
-# print(T_AQN)
-# from astropy import constants as cst
-# from astropy import units as u
+print("--> Second estimate: 4.623 eV")
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1.5e5]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+}
+enforce_units(quant)
 
+T_AQN = T_AQN_ionized3(
+    n_bar=quant["ioni_gas"], 
+    Dv=quant["dv_ioni"] * cst.c, 
+    f=1, 
+    g=0.1, 
+    T_p=quant["temp_ion"] * eV_to_K, 
+    R=calc_R_AQN(m_aqn_kg))
+print("-> I get, ", T_AQN)
 
+T_AQN = T_AQN_ionized2(
+    n_bar=quant["ioni_gas"], 
+    Dv=quant["dv_ioni"], 
+    f=1, 
+    g=0.1, 
+    T_p=quant["temp_ion"], 
+    R=calc_R_AQN(m_aqn_kg))
+print("-> I get, ", T_AQN)
+#============================================================================#
+print("---> Checking Phi")
+print("--> First estimate: 2.814e7 photon units")
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1e4]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+}
+enforce_units(quant)
 
-T_AQN = 4.623*u.eV#102.1*u.eV
+from astropy import constants as cst
+from astropy import units as u
 lamb = 1500 * u.AA 
 nu = lamb.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
-L = (0.6*u.kpc).to(u.m)
-R = calc_R_AQN(m_aqn_kg).to(u.m) # 2.25 [m]
-n_AQN = 2/5 * quant["dark_mat"] / m_aqn_kg # 1.28e-20 [1/m**3]
-X = T_AQN.to(u.J)
-C = 8 * cst.alpha**(5/2) / (45*cst.hbar**2*cst.c**2)
-F = C * X**3 * (X/cst.m_e/cst.c**2)**(1/4) * H(2*np.pi*cst.hbar*nu/X)
-Phi = L*R**2*n_AQN*F/(2*np.pi*cst.hbar*lamb) * (1*u.m/(100*u.cm))**2
-print(Phi)
-print(H(2*np.pi*cst.hbar*nu/X))
+
+print("-> I get, ", compute_phi(quant.copy(), m_aqn_kg, nu))
+
+Epsilon = compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"]
+Phi = Epsilon * (0.6*u.kpc).to(u.cm)/(4*np.pi)
+print("-> I get, ", Phi)
+print("--> Second estimate: 257.3 photon units")
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1.5e5]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+}
+enforce_units(quant)
+
+from astropy import constants as cst
+from astropy import units as u
+lamb = 1500 * u.AA 
+nu = lamb.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
+
+print("-> I get, ", compute_phi(quant.copy(), m_aqn_kg, nu))
+
+Epsilon = compute_epsilon_ionized(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"]
+Phi = Epsilon * (0.6*u.kpc).to(u.cm)/(4*np.pi)
+print("-> I get, ", Phi)
+#============================================================================#
+
+print("---> Checking Phi (integrated), which is Inu maps (24)")
+
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1e7]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+}
+enforce_units(quant)
+
+T_AQN = T_AQN_ionized3(
+    n_bar=quant["ioni_gas"], 
+    Dv=quant["dv_ioni"] * cst.c, 
+    f=1, 
+    g=0.1, 
+    T_p=quant["temp_ion"] * eV_to_K, 
+    R=calc_R_AQN(m_aqn_kg))
 
 
-# h_func_cutoff = 17 + 12*np.log(2)
-# def h(x):
-#     print(x)
-#     return_array = np.copy(x)
-#     try:
-#         return_array[np.where(x<=0)] = 0
-#         return_array[np.where((x<1) & (x>0))] = (17 - 12*np.log(x[np.where(x<1)]/2))
-#         return_array[np.where(x>=1)] = h_func_cutoff
-#     except:
-#         if x < 0:
-#             return 0
-#         else:
-#             if x < 1:
-#                 return (17 - 12*np.log(x/2))
-#             else:
-#                 return (17 + 12*np.log(2))        
-#     return return_array
+lambda_0 = 1500 * u.AA
+dlambda = 400 * u.AA
+x0 = (2*np.pi*cst.hbar*cst.c)/(T_AQN*lambda_0)
+sinh_arg = (x0*dlambda/(2*lambda_0)).to(u.dimensionless_unscaled).value
 
-# def H(x):
-#     return (1+x)*np.exp(-x)*h(x)
-
-# def new_H(x):
-#     if x < 1:
-#         return (1+x)*np.exp(-x)*(17-12*np.log(x/2))
-#     else:
-#         return (1+x)*np.exp(-x)*(17+12*np.log(2))
-
-# def new_h(x):
-#     if x < 1:
-#         return (17-12*np.log(x/2))
-#     else:
-#         return (17+12*np.log(2))
-
-# print(H(2*np.pi*cst.hbar*nu/X), 2*np.pi*cst.hbar*nu/X)
-
-# x_array = np.linspace(0,2, 100)[1:]
-
-# new_H_array = np.zeros(len(x_array))
-# for i in range(len(x_array)):
-#     new_H_array[i] = new_h(x_array[i])
-
-# H_array = h(x_array)
-
-# plt.figure(dpi=200)
-# plt.plot(x_array, H_array, label="original", linewidth=5)
-# plt.plot(x_array, new_H_array, label="new", color="red")
-# plt.legend()
-# print(H_array, new_H_array)
-# plt.show()
-
-# J_to_eV = (1*u.J).to(u.eV) / u.J
-# m2_to_cm2 = (1*u.m**2).to(u.cm**2) / u.m**2
-# A = 8 * cst.alpha**(5/2) / (45*cst.hbar**2*cst.c**2) * 1/J_to_eV**2
-
-# B = T_AQN**3
-
-# C = (T_AQN/m_e_eV)**(1/4)
-
-# nu = np.mean(frequency_band)
-
-# D = H(2*np.pi*cst.hbar*nu / T_AQN * J_to_eV)
-
-# F = A*B*C*D*eV_to_erg/m2_to_cm2/u.Hz
-
-# print(F)
-
-# w = nu.to(u.AA, equivalencies=u.spectral())
-# C = (erg_hz_cm2).to(photon_units*u.sr, u.spectral_density(w))
-
-# F = F * C / erg_hz_cm2 * 2*np.pi
-
-# L = (0.6*u.kpc).to(u.cm)
-# R = calc_R_AQN(m_aqn_kg)
-
-# print(F*L*R**2*quant["dark_mat"]/m_aqn_kg/(2*np.pi*cst.hbar*J_to_eV*w.to(u.cm)*eV_to_erg/inverg_to_cm)*(1/100*u.m/u.cm)**3)
-
-# print(quant["dark_mat"])
-
-# print(D)
+ratio_theory = (1+0.5926)*(2*lambda_0/(x0*dlambda))*np.sinh(sinh_arg)
+ratio_theory = ratio_theory.to(u.dimensionless_unscaled)
+print("--> Ratio estimate is:", ratio_theory.value)
 
 
+from astropy import constants as cst
+from astropy import units as u
+lamb = 1500 * u.AA 
+nu = lamb.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
+Phi_no_band = compute_phi(quant.copy(), m_aqn_kg, nu)
+
+Epsilon = compute_epsilon_ionized_bandwidth(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"]
+Phi_band = Epsilon * (0.6*u.kpc).to(u.cm)/(4*np.pi)
+
+ratio = Phi_band / Phi_no_band
+
+print("-> Calculated ratio is:", ratio.value)
+#============================================================================#
+print("--> Now plotting checks for Phi (integrated) / Phi")
+
+T_gas_array = np.logspace(2, 7, 100) * u.K
+T_AQN_array = np.zeros(len(T_gas_array)) * u.eV
+ratio_theory_array = np.zeros(len(T_gas_array))
+ratio_array = np.zeros(len(T_gas_array))
+
+for i in range(len(T_gas_array)):
+
+    quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': T_gas_array[i],
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+    }
+    enforce_units(quant)
+
+    T_AQN = T_AQN_ionized3(
+        n_bar=quant["ioni_gas"], 
+        Dv=quant["dv_ioni"] * cst.c, 
+        f=1, 
+        g=0.1, 
+        T_p=quant["temp_ion"] * eV_to_K, 
+        R=calc_R_AQN(m_aqn_kg))
+
+    T_AQN_array[i] = T_AQN[0]
+
+    lambda_0 = 1500 * u.AA
+    dlambda = 400 * u.AA
+    x0 = (2*np.pi*cst.hbar*cst.c)/(T_AQN*lambda_0)
+    sinh_arg = (x0*dlambda/(2*lambda_0)).to(u.dimensionless_unscaled).value
+
+    ratio_theory = (1+0.5926)*(2*lambda_0/(x0*dlambda))*np.sinh(sinh_arg)
+    ratio_theory = ratio_theory.to(u.dimensionless_unscaled)
+
+    ratio_theory_array[i] = ratio_theory[0].value
+    # print("--> Ratio estimate is:", ratio_theory.value)
 
 
+    from astropy import constants as cst
+    from astropy import units as u
+    lamb = 1500 * u.AA 
+    nu = lamb.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
+    Phi_no_band = compute_phi(quant.copy(), m_aqn_kg, nu)
+    # print(T_gas_array[i], Phi_no_band.value, end="\t")
+    Epsilon = compute_epsilon_ionized_bandwidth(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"]
+    Phi_band = Epsilon * (0.6*u.kpc).to(u.cm)/(4*np.pi)
+    # print(Phi_band.value)
+    ratio = Phi_band / Phi_no_band
+    ratio_array[i] = ratio[0].value
 
+    # print("-> Calculated ratio is:", ratio.value)
 
+# print(ratio_array)
+plt.figure(dpi=300)
+plt.plot(T_AQN_array, ratio_array, label="Computed ratio", linewidth=3)
+plt.plot(T_AQN_array, ratio_theory_array, label="Theory using Inu maps (24)")
+plt.xscale("log")
+plt.yscale("log")
+plt.xlabel("T_AQN [eV]")
+plt.ylabel("<Phi>/Phi")
+plt.legend()
+plt.show()
 
+x0_array = ((2*np.pi*cst.hbar*cst.c)/(T_AQN_array*lambda_0)).to(u.dimensionless_unscaled).value
 
+plt.figure(dpi=300)
+plt.plot(x0_array, ratio_array, label="Computed ratio", linewidth=3)
+plt.plot(x0_array, ratio_theory_array, label="Theory using Inu maps (24)")
+plt.axvline(x=1,color="red", label="x0=1")
+plt.xscale("log")
+plt.yscale("log")
+plt.xlabel("x0")
+plt.ylabel("<Phi>/Phi")
+plt.legend()
+plt.show()
 
+'''
+#============================================================================#
+print("---> Checking Phi (integrated) with velocity distribution, which is Inu maps (30)")
 
+plot_maxwell_boltzmann()
 
-
-
-
-
-
-
-
-
-
-# plot_maxwell_boltzmann()
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1e4]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+}
+enforce_units(quant)
+from astropy import constants as cst
+from astropy import units as u
+lamb = 1500 * u.AA 
+nu = lamb.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
+epsilon = compute_epsilon_ionized_bandwidth(quant.copy(), m_aqn_kg, frequency_band)["aqn_emit"]
+Phi_no_distribution = epsilon * (0.6*u.kpc).to(u.cm)/(4*np.pi)
+print(Phi_no_distribution)
 
 def compute_epsilon_integrand(v, quant, sigma_v, v_b, m_aqn_kg, frequency_band):
     f_res = f_maxbolt(v, sigma_v, v_b)
     quant_copy = quant.copy()
     quant_copy["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
 
-    e_res = compute_epsilon_ionized(quant_copy, m_aqn_kg, frequency_band)["aqn_emit"].value
+    e_res = compute_epsilon_ionized_bandwidth(quant_copy, m_aqn_kg, frequency_band)["aqn_emit"].value
 
     return e_res * f_res
 
@@ -291,23 +416,28 @@ def compute_epsilon_integrated(quant, m_aqn_kg, frequency_band, sigma_v, v_b):
 
     return result * epsilon_units
 
+sigma_v = 110 * u.km/u.s
+v_b = 180 * u.km/u.s
+epsilon_res = compute_epsilon_integrated(quant, m_aqn_kg, frequency_band, sigma_v, v_b)
+phi = epsilon_res * (0.6*u.kpc).to(u.cm)/(4*np.pi)
+print(phi)
 # print(compute_epsilon_integrated(quant, m_aqn_kg, frequency_band, 156*u.km/u.s, 180*u.km/u.s))
 # print(compute_epsilon_ionized(quant, m_aqn_kg, frequency_band)["aqn_emit"][0])
 
-def parameter_variation_integrand(quant, sigma_v, v_b, m_aqn_kg, frequency_band, parameter_name, parameter_array, mass_variation = False):
-    parameter_array_length = len(parameter_array)
+# def parameter_variation_integrand(quant, sigma_v, v_b, m_aqn_kg, frequency_band, parameter_name, parameter_array, mass_variation = False):
+#     parameter_array_length = len(parameter_array)
 
-    epsilon_array = np.zeros(parameter_array_length)
+#     epsilon_array = np.zeros(parameter_array_length)
 
-    if not mass_variation:
-        for i, parameter in enumerate(parameter_array):
-            quant[parameter_name] = parameter
-            epsilon_array[i] = compute_epsilon_integrand(quant["dv_ioni"]*cst.c.to(u.km/u.s).value, quant, sigma_v, v_b, m_aqn_kg, frequency_band)[0]
-    else:
-        for i, parameter in enumerate(parameter_array):
-            epsilon_array[i] = compute_epsilon_integrand(quant["dv_ioni"]*cst.c.to(u.km/u.s).value, quant, sigma_v, v_b, parameter, frequency_band)[0]
+#     if not mass_variation:
+#         for i, parameter in enumerate(parameter_array):
+#             quant[parameter_name] = parameter
+#             epsilon_array[i] = compute_epsilon_integrand(quant["dv_ioni"]*cst.c.to(u.km/u.s).value, quant, sigma_v, v_b, m_aqn_kg, frequency_band)[0]
+#     else:
+#         for i, parameter in enumerate(parameter_array):
+#             epsilon_array[i] = compute_epsilon_integrand(quant["dv_ioni"]*cst.c.to(u.km/u.s).value, quant, sigma_v, v_b, parameter, frequency_band)[0]
 
-    return epsilon_array * epsilon_units
+#     return epsilon_array * epsilon_units
 
 
 # parameter_relations_save_location = "../visuals/parameter_relations/"

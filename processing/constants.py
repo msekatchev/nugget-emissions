@@ -56,18 +56,19 @@ erg_hz_cm2   = 1*u.erg/u.s/u.Hz/u.cm**2
 epsilon_units = 1*u.photon / u.cm**3 / u.s / u.Angstrom
 epsilon_to_photon = (0.6*u.kpc).to(u.cm)/(4*np.pi)
 
-m_e_eV  = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg * erg_to_eV  # mass of electron    in eV
-m_e_erg = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg              # mass of electron    in erg
+m_e_eV  = (cst.m_e.cgs).to(u.eV, u.mass_energy())  # mass of electron    in eV
+m_e_erg = (cst.m_e.cgs).to(u.erg, u.mass_energy())              # mass of electron    in erg
 m_p_erg = (cst.m_p.cgs).to(u.erg, u.mass_energy())              # mass of proton      in erg
+m_p_erg = (1*u.GeV).to(u.erg)                                   # mass of proton      in erg (approximation)
 #m_AQN_GeV = 1 * u.g * g_to_GeV
 
 B = 10**25                                                  # Baryon charge number
 E_ann_GeV = 2 * u.GeV                                       # energy liberated by proton annihilation
-f  = 1/10                                                   # factor to account for probability of reflection
+f  = 1                                                      # factor to account for probability of reflection
 g  = 1/10                                                   # (1-g) of total annihilation energy is thermalized     
-Dv = 0.00013835783 * u.dimensionless_unscaled               # speed of nugget through visible matter
-Dv = 10**-3 * u.dimensionless_unscaled
-
+# Dv = 0.00013835783 * u.dimensionless_unscaled               # speed of nugget through visible matter
+# Dv = 10**-3 * u.dimensionless_unscaled
+# 
 # This is only added for the /sr dependence of the units
 dOmega = 1*u.sr
 
