@@ -153,6 +153,7 @@ def h(x):
 
 
 def H(x):
+    # return 55.31
     return (1+x)*np.exp(-x)*h(x)
 
 
@@ -190,8 +191,8 @@ def spectral_surface_emissivity(nu_in, T_in):
     X = w/T
     X[T<=0] = 0
 
-    return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * (1 + X) * np.exp(- X) * h(X)
-
+    # return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * (1 + X) * np.exp(- X) * h(X)
+    return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * H(X) #(1 + X) * np.exp(- X) * h(X)
 
 # erg Hz^-1 s^-1 cm^-3
 # n_AQN m^-3
@@ -207,7 +208,7 @@ def spectral_spatial_emissivity(n_AQN, n_bar, Dv, f, g, nu):
     return dFdw * 4 * np.pi * R_AQN**2 * n_AQN.to(1/u.cm**3)
 
 
-def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
+def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas=True):
     dnu = frequency_band[1] - frequency_band[0]
     nu_range = np.max(frequency_band) - np.min(frequency_band)
 
@@ -221,7 +222,11 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
     cubes["dark_mat"] = cubes["dark_mat"] * 2/5
 
     # compute effective gas temperature
-    cubes["temp_ion_eff"] = cubes["temp_ion"] # + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+    if adjust_T_gas:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+        # cubes["temp_ion_eff"] = 1/2 * m_p_erg.to(u.eV) * cubes["dv_ioni"]**2
+    else:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] 
 
     # print(cubes["temp_ion_eff"])
 
@@ -258,7 +263,7 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band):
 
     return cubes
 
-def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band):
+def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas=True):
     dnu = frequency_band[1] - frequency_band[0]
     nu_range = np.max(frequency_band) - np.min(frequency_band)
 
@@ -271,9 +276,12 @@ def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band):
 
     cubes["dark_mat"] = cubes["dark_mat"] * 2/5
 
-    # compute effective gas temperature !!!!!!v!!!!!!!!!!!!!!!!!!
-    # cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
-    cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+    # compute effective gas temperature
+    if adjust_T_gas:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+        # cubes["temp_ion_eff"] = 1/2 * m_p_erg.to(u.eV) * cubes["dv_ioni"]**2
+    else:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] 
 
     # print(cubes["temp_ion_eff"])
 
