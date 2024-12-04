@@ -266,6 +266,8 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas
 def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas=True):
     dnu = frequency_band[1] - frequency_band[0]
     nu_range = np.max(frequency_band) - np.min(frequency_band)
+    print(nu_range)
+    nu_0 = (1500*u.AA).to(u.Hz, equivalencies=u.spectral())
 
     cubes = cubes_import.copy()
     enforce_units(cubes)
@@ -305,7 +307,7 @@ def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band, ad
     
     for nu in frequency_band:
         cubes["aqn_emit"] += to_skymap_units(spectral_surface_emissivity(nu, 
-                           cubes["t_aqn_i"])/(dOmega)*dnu/nu_range, nu)        
+                           cubes["t_aqn_i"])/(dOmega)*dnu/nu_range*nu_0/nu, nu)        
 
     # vvv omit frequency band integration, use mean of frequency band instead: vvv
     # lamb = 1500 * u.AA 
@@ -315,6 +317,98 @@ def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band, ad
 
     cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
                        (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
+
+    return cubes
+
+# new bandwidth integral function, using QUAD instead of a SUM
+from scipy.integrate import quad
+def compute_epsilon_ionized_bandwidth_2(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas=True):
+
+    #------------------------------------------------------#
+    cubes = cubes_import.copy()
+    enforce_units(cubes)
+    R_aqn_cm = calc_R_AQN(m_aqn_kg)
+    cubes["dark_mat"] = cubes["dark_mat"] * 2/5
+    #------------------------------------------------------#
+
+    #------------------------------------------------------#
+    # compute effective gas temperature
+    if adjust_T_gas:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+        # cubes["temp_ion_eff"] = 1/2 * m_p_erg.to(u.eV) * cubes["dv_ioni"]**2
+    else:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] 
+
+    # compute AQN temperature
+    cubes["t_aqn_i"] = T_AQN_ionized2(  cubes["ioni_gas"], cubes["dv_ioni"], f, g, 
+                                        cubes["temp_ion_eff"], R_aqn_cm)
+    #------------------------------------------------------#
+
+    def spectral_surface_emissivity(nu_in, T_in):
+        nu, T = nu_in.copy(), T_in.copy()
+        T = T * eV_to_erg
+        w = 2 * np.pi * nu * Hz_to_erg
+        unit_factor = (1 / cst.hbar.cgs) * (1/(cst.hbar.cgs * cst.c.cgs))**2 * (cst.hbar.cgs * 1/u.Hz * 1/u.s)
+        #                ^ 1/seconds           ^ 1/area                          ^ 1/frequency and energy
+        X = w/T
+        X[T<=0] = 0
+
+        # return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * (1 + X) * np.exp(- X) * h(X)
+        return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4) * H(X) #(1 + X) * np.exp(- X) * h(X)
+
+    def spectral_surface_emissivity_no_H(T_in):
+        T = T_in * eV_to_erg
+        unit_factor = (1 / cst.hbar.cgs) * (1/(cst.hbar.cgs * cst.c.cgs))**2 * (cst.hbar.cgs * 1/u.Hz * 1/u.s)
+        #                ^ 1/seconds           ^ 1/area                          ^ 1/frequency and energy        
+        return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4)
+
+    def integrate_func(func, band, x0):
+        lamb_range = np.max(band) - np.min(band)
+
+        integral = quad(func, np.min(band), np.max(band), args=(x0),
+            epsabs=1e-9, epsrel=1e-9)[0]
+
+        return 1 / lamb_range * integral
+
+    def func(lamb, x0):
+        kT = ((2*np.pi*cst.hbar*cst.c)/(x0*lambda0)).to(u.J)
+        x = ((2*np.pi*cst.hbar*cst.c)/(kT*lamb*u.AA)).to(u.dimensionless_unscaled)
+
+        C = (erg_hz_cm2).to(photon_units*u.sr, u.spectral_density(lamb*u.AA))
+        to_skymap_units_conversion = C / erg_hz_cm2 * 2*np.pi
+
+        return lambda0.value*H(x)*1/lamb * to_skymap_units_conversion.value/(dOmega.value)
+
+
+    dband = 1000000
+    band = np.linspace(1300,1700,dband)
+    lambda0 = 1500 * u.AA
+    x0 = ((2*np.pi*cst.hbar*cst.c)/(cubes["t_aqn_i"]*lambda0)).to(u.dimensionless_unscaled)
+
+
+
+    # cubes["aqn_emit"] = np.zeros(np.shape(cubes["t_aqn_i"])) * photon_units
+
+    cubes["aqn_emit"] = spectral_surface_emissivity_no_H(cubes["t_aqn_i"]) * integrate_func(func, band, x0) 
+
+    cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
+                       (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
+    # # from erg/s/Hz/cm2 to photons/s/A/cm2
+    # def to_skymap_units(F_erg_hz_cm2,nu):
+
+    #     w = nu.to(u.AA, equivalencies=u.spectral())
+    #     C = (erg_hz_cm2).to(photon_units*u.sr, u.spectral_density(w))
+
+    #     return F_erg_hz_cm2 * C / erg_hz_cm2 * 2*np.pi
+
+    # cubes["aqn_emit"] = np.zeros(np.shape(cubes["t_aqn_i"])) * photon_units
+    
+    # for nu in frequency_band:
+    #     cubes["aqn_emit"] += to_skymap_units(spectral_surface_emissivity(nu, 
+    #                        cubes["t_aqn_i"])/(dOmega)*dnu/nu_range*nu_0/nu, nu)        
+
+    # cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
+    #                    (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
 
     return cubes
 
