@@ -477,6 +477,7 @@ print(phi)
 # # plt.legend()
 # plt.show()
 
+
 quant = {
     'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
     'ioni_gas': np.array([0.01]) * 1/u.cm**3,
@@ -529,6 +530,8 @@ print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_b
     500*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 print("------------------------------------------------------")
+
+
 
 '''
 Checking parameters v.s. FIRE simulation
