@@ -6,6 +6,10 @@ from scipy.optimize import fsolve
 import collections.abc
 print("Loaded AQN script")
 
+from time import time as tt
+
+from scipy.integrate import quad
+from scipy.integrate import quad_vec
 
 # cm
 # R cm
@@ -151,11 +155,15 @@ h_func_cutoff = 17 + 12*np.log(2)
 #                 return (17 + 12*np.log(2))        
 #     return return_array
 
+# def h(x):
+#     return np.where(
+#         x < 0,
+#         0,
+#         np.where(x < 1, 17 - 12 * np.log(x / 2), 17 + 12 * np.log(2)))
+
 def h(x):
-    return np.where(
-        x < 0,
-        0,
-        np.where(x < 1, 17 - 12 * np.log(x / 2), 17 + 12 * np.log(2)))
+    return np.where(x < 1, 17 - 12 * np.log(x / 2), 17 + 12 * log2)
+
 
 def H(x):
     # return 55.31
@@ -213,7 +221,7 @@ def spectral_spatial_emissivity(n_AQN, n_bar, Dv, f, g, nu):
     dFdw = spectral_surface_emissivity(nu, T_AQN)
     return dFdw * 4 * np.pi * R_AQN**2 * n_AQN.to(1/u.cm**3)
 
-
+'''
 def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas=True):
     dnu = frequency_band[1] - frequency_band[0]
     nu_range = np.max(frequency_band) - np.min(frequency_band)
@@ -268,7 +276,9 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas
                        (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
 
     return cubes
+'''
 
+'''
 def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas=True):
     dnu = frequency_band[1] - frequency_band[0]
     nu_range = np.max(frequency_band) - np.min(frequency_band)
@@ -325,18 +335,45 @@ def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, frequency_band, ad
                        (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
 
     return cubes
+'''
 
 # new implementation, using quad_vec instead of a simple sum for the bandwidth integral
-from scipy.integrate import quad_vec
-def compute_epsilon_ionized_bandwidth_2(cubes_import, m_aqn_kg, frequency_band, adjust_T_gas=True):
+#------------------------------------------------------#
+# helper functions for compute_epsilon_ionized_bandwidth_2()
+unit_factor = (1 / cst.hbar.cgs) * (1/(cst.hbar.cgs * cst.c.cgs))**2 * (cst.hbar.cgs * 1/u.Hz * 1/u.s)
+#                ^ 1/seconds           ^ 1/area                          ^ 1/frequency and energy  
+spectral_surface_emissivity_constant = unit_factor * 4/45 * cst.alpha ** (5/2) * 1/np.pi
+def spectral_surface_emissivity_no_H(T_in):
+    T = T_in * eV_to_erg
 
+    return  spectral_surface_emissivity_constant * T**3 * (T/(m_e_eV*eV_to_erg))**(1/4)
+
+def integrate_func(func, band_min, band_max, kT):
+    lamb_range = band_max - band_min
+    integral = quad_vec(func, band_min.value, band_max.value, args=(kT.value,),
+        epsabs=1e-9, epsrel=1e-9)[0]
+
+    return 1 / lamb_range.value * integral * photon_units/erg_hz_cm2/u.sr
+
+def func(lamb, kT):
+    x = ((2*np.pi*cst.hbar*cst.c)/(kT*u.eV*lamb*u.AA)).to(u.dimensionless_unscaled)
+    to_skymap_units_conversion = (1/cst.h * 1e-7 * 1/lamb) * 2*np.pi
+
+    return H(x) * to_skymap_units_conversion.value/(dOmega.value)
+#------------------------------------------------------#
+
+def compute_epsilon_ionized_bandwidth_2(cubes_import, m_aqn_kg, band_min, band_max, adjust_T_gas=True):
+
+    t=tt()
     #------------------------------------------------------#
     cubes = cubes_import.copy()
     enforce_units(cubes)
     R_aqn_cm = calc_R_AQN(m_aqn_kg)
     cubes["dark_mat"] = cubes["dark_mat"] * 2/5
     #------------------------------------------------------#
+    ttt(t, "cube copies & imports")
 
+    t=tt()
     #------------------------------------------------------#
     # compute effective gas temperature
     if adjust_T_gas:
@@ -348,57 +385,43 @@ def compute_epsilon_ionized_bandwidth_2(cubes_import, m_aqn_kg, frequency_band, 
     cubes["t_aqn_i"] = T_AQN_ionized2(  cubes["ioni_gas"], cubes["dv_ioni"], f, g, 
                                         cubes["temp_ion_eff"], R_aqn_cm)
     #------------------------------------------------------#
+    ttt(t, "cube temp ion")   
 
-    def spectral_surface_emissivity_no_H(T_in):
-        T = T_in * eV_to_erg
-        unit_factor = (1 / cst.hbar.cgs) * (1/(cst.hbar.cgs * cst.c.cgs))**2 * (cst.hbar.cgs * 1/u.Hz * 1/u.s)
-        #                ^ 1/seconds           ^ 1/area                          ^ 1/frequency and energy  
-
-        return unit_factor * 4/45 * T**3 * cst.alpha ** (5/2) * 1/np.pi * (T/(m_e_eV*eV_to_erg))**(1/4)
-
-    def integrate_func(func, band, x0):
-        lamb_range = np.max(band) - np.min(band)
-
-        integral = quad_vec(func, np.min(band), np.max(band), args=(x0.value,),
-            epsabs=1e-9, epsrel=1e-9)[0]
-
-        return 1 / lamb_range * integral * photon_units/erg_hz_cm2/u.sr
-
-    def func(lamb, x0):
-        kT = ((2*np.pi*cst.hbar*cst.c)/(x0*lambda0)).to(u.J)
-        x = ((2*np.pi*cst.hbar*cst.c)/(kT*lamb*u.AA)).to(u.dimensionless_unscaled)
-
-        C = (erg_hz_cm2).to(photon_units*u.sr, u.spectral_density(lamb*u.AA))
-        to_skymap_units_conversion = C / erg_hz_cm2 * 2*np.pi
-
-        return lambda0.value*H(x)*1/lamb * to_skymap_units_conversion.value/(dOmega.value)
-
-    dband = 1000000
-    band = np.linspace(1300,1700,dband)
-    lambda0 = 1500 * u.AA
-    x0 = ((2*np.pi*cst.hbar*cst.c)/(cubes["t_aqn_i"]*lambda0)).to(u.dimensionless_unscaled)
-
-    cubes["aqn_emit"] = spectral_surface_emissivity_no_H(cubes["t_aqn_i"]) * integrate_func(func, band, x0) 
+    t=tt()
+    spectral_surface_emissivity_no_H_ = spectral_surface_emissivity_no_H(cubes["t_aqn_i"])
+    ttt(t, "emissivity no H")
+    t=tt()
+    integrate_func_ = integrate_func(func, band_min, band_max, cubes["t_aqn_i"]) 
+    ttt(t, "bandwidth integral")
+    cubes["aqn_emit"] = spectral_surface_emissivity_no_H_ * integrate_func_
 
     cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
                        (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
 
     return cubes
 
-def compute_epsilon_velocity_integral(quant, m_aqn_kg, frequency_band, adjust_T_gas, sigma_v, v_b):
-    def epsilon_velocity_integrand(v, quant, sigma_v, v_b, m_aqn_kg, frequency_band, adjust_T_gas):
-        f_res = f_maxbolt(v, sigma_v, v_b)
-        quant_copy = quant.copy()
-        quant_copy["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
+def epsilon_velocity_integrand(v, quant, sigma_v, v_b, m_aqn_kg, band_min, band_max, adjust_T_gas):
+    # t=tt()
+    f_res = f_maxbolt(v, sigma_v, v_b)
+    # ttt(t,"maxbolt")
 
-        e_res = compute_epsilon_ionized_bandwidth_2(quant_copy, m_aqn_kg, frequency_band, adjust_T_gas)["aqn_emit"].value # _bandwidth
+    # t=tt()
+    # quant_copy = quant.copy()
+    # quant_copy["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
+    # ttt(t,"quant copy")
 
-        return e_res * f_res
+    quant["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
+    t=tt()
+    e_res = compute_epsilon_ionized_bandwidth_2(quant, m_aqn_kg, band_min, band_max, adjust_T_gas)["aqn_emit"].value # _bandwidth
+    ttt(t,"bandwidth integral")
+    return e_res * f_res
 
-    result, error = quad_vec(epsilon_velocity_integrand, 0, 5*(sigma_v.value+v_b.value), 
-        args=(quant, sigma_v.value, v_b.value, m_aqn_kg, frequency_band, adjust_T_gas))
+def compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b):
+                # !!!!! quad_vec fails when adjust_T_gas = True
+    result, error = quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
+        args=(quant, sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))
 
-    return result * epsilon_units
+    return result * epsilon_units/u.sr
 
 # compute Phi (with 0.6kpc length intergral estimate) using SI, for a single frequency nu
 def compute_phi(quant, m_aqn_kg, nu):

@@ -14,6 +14,7 @@ dnu = 1e14*u.Hz # 1e9 for WMAP, 1e14 for GALEX
 # frequency_band = np.arange(f_min_hz.value, f_max_hz.value, dnu.value) * u.Hz
 frequency_band = np.linspace(f_min_hz.value, f_max_hz.value, 1000) * u.Hz
 nu_range = f_max_hz - f_min_hz
+band_min, band_max = 1300*u.AA, 1700*u.AA
 
 quant = {
     'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
@@ -293,7 +294,7 @@ lamb = 1500 * u.AA
 nu = lamb.to(u.Hz, equivalencies=u.spectral()) # 1.999e15 [Hz]
 Phi_no_band = compute_phi(quant.copy(), m_aqn_kg, nu)
 
-Epsilon = compute_epsilon_ionized_bandwidth_2(quant.copy(), m_aqn_kg, frequency_band, adjust_T_gas=False)["aqn_emit"]
+Epsilon = compute_epsilon_ionized_bandwidth_2(quant.copy(), m_aqn_kg, band_min, band_max, adjust_T_gas=False)["aqn_emit"]
 Phi_band = Epsilon * (0.6*u.kpc).to(u.cm)/(4*np.pi)
 
 ratio = Phi_band / Phi_no_band
@@ -431,22 +432,31 @@ def compute_epsilon_integrated(quant, m_aqn_kg, frequency_band, sigma_v, v_b):
 
     return result * epsilon_units
 
-def compute_epsilon_integrand_bandwidth(v, quant, sigma_v, v_b, m_aqn_kg, frequency_band):
+def compute_epsilon_integrand_bandwidth(v, quant, sigma_v, v_b, m_aqn_kg, band_min, band_max, adjust_T_gas):
     f_res = f_maxbolt(v, sigma_v, v_b)
     quant_copy = quant.copy()
     quant_copy["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
 
-    e_res = compute_epsilon_ionized_bandwidth_2(quant_copy, m_aqn_kg, frequency_band)["aqn_emit"].value # _bandwidth
+    e_res = compute_epsilon_ionized_bandwidth_2(quant_copy, m_aqn_kg, band_min, band_max)["aqn_emit"].value # _bandwidth
 
     return e_res * f_res
 
 # print(compute_epsilon_integrand(0.5, quant, 156, 180, m_aqn_kg, frequency_band))
 
+def epsilon_velocity_integrand(v, quant, sigma_v, v_b, m_aqn_kg, band_min, band_max, adjust_T_gas):
+    f_res = f_maxbolt(v, sigma_v, v_b)
+    quant_copy = quant.copy()
+    quant_copy["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
 
-def compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, sigma_v, v_b):
+    e_res = compute_epsilon_ionized_bandwidth_2(quant_copy, m_aqn_kg, band_min, band_max, adjust_T_gas)["aqn_emit"].value # _bandwidth
+
+    return e_res * f_res
+
+
+def compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b):
     # result, error = quad(f_maxbolt, 0, 10000, args=(sigma_v.value, v_b.value))
-    result, error = quad(compute_epsilon_integrand_bandwidth, 0, 5*(sigma_v.value+v_b.value), 
-        args=(quant, sigma_v.value, v_b.value, m_aqn_kg, frequency_band))
+    result, error = quad(epsilon_velocity_integrand, 0.01, 5*(sigma_v.value+v_b.value), 
+        args=(quant, sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))
 
     # print(f"Integral result: {result:.4e}, Estimated error: {error:.4e}")
 
@@ -488,46 +498,47 @@ quant = {
 }
 enforce_units(quant)
 
+
 print("------------------------------------------------------")
 
 print("sigma_v = 50, v_b = 50, Phi = 40.22")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    50*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 50*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
 print("sigma_v = 100, v_b = 50, Phi = 7.524")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    100*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 100*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
 print("sigma_v = 110, v_b = 180, Phi = 1.702")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    110*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 110*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
 print("sigma_v = 156, v_b = 180, Phi = 1.167")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    156*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 156*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
 print("sigma_v = 50, v_b = 180, Phi = 0.1312")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    50*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 50*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
 print("sigma_v = 500, v_b = 180, Phi = 0.06485")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    500*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 500*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
 print("sigma_v = 110, v_b = 500, Phi = 2.29831e-4")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    110*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 110*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
 print("sigma_v = 500, v_b = 500, Phi = 0.04198")
-print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, frequency_band, 
-    500*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_integrated_bandwidth(quant, m_aqn_kg, band_min, band_max, 
+    True, 500*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 print("------------------------------------------------------")
 

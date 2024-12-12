@@ -4,6 +4,8 @@ from astropy import units as u
 print("Loaded constants script")
 # Constants
 
+from time import time as tt
+
 # ----------------------------- unit conversions ----------------------------- 
 eV_to_erg = 1e7*cst.e.si.value*u.erg/u.eV
 GeV_to_erg = eV_to_erg.to(u.erg/u.GeV)
@@ -33,6 +35,10 @@ GeV_to_g = 1/g_to_GeV
 kg_to_eV = g_to_GeV.to(u.eV/u.kg)
 
 invcm_to_erg = 1/cm_to_GeVinv * GeV_to_erg
+
+J_to_eV = 1/cst.e.si.value * u.eV / u.J
+m_to_AA = 1e10 * u.AA / u.m
+log2 = np.log(2)
 
 
 
@@ -99,3 +105,10 @@ def enforce_units(quant):
         quant["dv_neut"] = (quant["dv_neut"] / cst.c).to(u.dimensionless_unscaled)
 
 
+def erg_hz_cm2_to_photon_units(erg_hz_cm2, wavelength):
+    return (erg_hz_cm2 * 1/cst.h * 1e-7 * 1/wavelength).value * photon_units
+
+
+def ttt(ti, s=""):
+    elapsed_time = tt() - ti
+    # print(f"{s}: {elapsed_time:.5f} s")
