@@ -13,6 +13,10 @@ from survey_parameters import *
 
 from time import time as tt
 
+from multiprocessing import cpu_count
+
+
+band_min, band_max = 1300*u.AA, 1700*u.AA
 
 #======================================================================#
 def func(lamb, x0):
@@ -169,23 +173,26 @@ def compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, adjus
 
     return result * epsilon_units/u.sr
 
-def compute_epsilon_velocity_integral(batches, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b):
-                # !!!!! quad_vec fails when adjust_T_gas = True
-    result, error = quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
-        args=(quant, sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))
+# def compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b):
+#                 # !!!!! quad_vec fails when adjust_T_gas = True
+#     batches = split_quant(quant, n_splits)
 
-    for batch in batches:
+#     # result, error = quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
+#     #     args=(quant, sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))
 
+#     batch_results = {}
+#     for i in range(n_splits):
+#     	batch_list = {}
+#     	for j in range(len(batches[i])):
+#     		print(batches)
+#     		batch_list[j] = quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
+#         args=(batches[i][j], sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))[0]
 
+#     	batch_results[i] = batch_list
 
-    return result * epsilon_units/u.sr
+#     return batch_results * epsilon_units/u.sr
 
 # sigma_v, v_b = 50*u.km/u.s, 50*u.km/u.s
-
-# res = compute_epsilon_velocity_integral(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b)
-# print(res*(0.6*u.kpc).to(u.cm)/(4*np.pi))
-
-print(quant)
 
 def split_quant(quant, n_splits):
     """Split the quant dictionary into n_splits batches."""
@@ -196,16 +203,122 @@ def split_quant(quant, n_splits):
         batches.append(batch)
     return batches
 
-batches = split_quant(quant, 10)
 
-print(batches[0])
-print("---------------")
-print(batches[1])
-print("---------------")
-print(batches[2])
-print("---------------")
-print(batches[3])
-print("---------------")
+print(cpu_count())
+from joblib import Parallel, delayed
+
+
+def process_batch(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b):
+	print("!!!!!!!!!!!")
+	print(quant)
+
+	quant_count = len(quant["dark_mat"])
+
+	if quant_count == 0:
+		return []
+
+	batches = split_quant(quant, quant_count)
+
+	batch_results = []
+	for i in range(quant_count):
+		batch_results.append(quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
+			args=(batches[i], sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))[0])
+	return batch_results * epsilon_units/u.sr
+
+
+def compute_epsilon(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b, parallel=False):
+
+	if parallel:
+
+		cpu_count = 8 #cpu_count()
+		batches = split_quant(quant, cpu_count)
+
+		# print(batches)
+
+		batch_results = Parallel(n_jobs=cpu_count)(
+	        delayed(process_batch)(batch, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
+	        for batch in batches)
+
+		return batch_results
+
+	else:
+
+		quant_count = len(quant["dark_mat"])
+		batches = split_quant(quant, quant_count)
+
+		batch_results = []
+		for i in range(quant_count):
+			batch_results.append(quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
+				args=(batches[i], sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))[0])
+		return batch_results * epsilon_units/u.sr
+
+# t=tt()
+# res = compute_epsilon_velocity_integral(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b)
+# print(res*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+# ttt(t,"2")
+
+# t=tt()
+res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, True)
+print("------------------------------------------------")
+print(res)
+# print(res*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+# ttt(t,"2")
+
+
+
+# batches = split_quant(quant, 10)
+
+# print(batches[0])
+# print("---------------")
+# print(batches[1])
+# print("---------------")
+# print(batches[2])
+# print("---------------")
+# print(batches[3])
+# print("---------------")
+
+n_splits = 3
+# compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, True, sigma_v, v_b)
+
+
+# from joblib import Parallel, delayed
+# import numpy as np
+
+# def process_batch(batch_quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b):
+#     """Process a batch of cubes."""
+#     results = []
+#     for i in range(len(batch_quant["dark_mat"])):  # Process each cube in the batch
+#         cube_quant = {key: val[i:i + 1] for key, val in batch_quant.items()}
+#         result = compute_epsilon_velocity_integral(
+#             cube_quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b
+#         )
+#         results.append(result)
+#     return np.array(results)
+
+# def parallel_compute(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b, n_jobs=-1):
+#     """Parallelize computation over batches of cubes."""
+#     # Determine the number of workers (batches) to use
+#     from multiprocessing import cpu_count
+#     n_workers = n_jobs if n_jobs > 0 else cpu_count()
+
+#     # Split quant into batches
+#     quant_batches = split_quant(quant, n_workers)
+
+#     # Process each batch in parallel
+#     batch_results = Parallel(n_jobs=n_jobs)(
+#         delayed(process_batch)(batch, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
+#         for batch in quant_batches
+#     )
+    
+#     # Combine results from all batches
+#     # aqn_emit = np.concatenate(batch_results, axis=0)
+#     # aqn_emit = np.vstack(batch_results)
+#     print(batch_results)
+#     print(len(quant["dark_mat"]))
+#     aqn_emit = [batch_results[i][0][0] for i in range(n_workers)]
+#     return 
+
+# aqn_emit = parallel_compute(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, False, sigma_v, v_b)
 
 
 # v_array = np.linspace(0.01, 1*(sigma_v.value+v_b.value), 500) * u.km/u.s
@@ -229,7 +342,7 @@ print("---------------")
 # res = f_maxbolt(x_arr)
 # plt.plot(x_arr, res)
 # plt.show()
-# band_min, band_max = 1300*u.AA, 1700*u.AA
+# 
 
 
 # quant = {
