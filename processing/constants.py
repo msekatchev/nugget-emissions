@@ -4,6 +4,8 @@ from astropy import units as u
 print("Loaded constants script")
 # Constants
 
+import pickle
+
 from time import time as tt
 
 # ----------------------------- unit conversions ----------------------------- 
@@ -39,6 +41,8 @@ invcm_to_erg = 1/cm_to_GeVinv * GeV_to_erg
 J_to_eV = 1/cst.e.si.value * u.eV / u.J
 m_to_AA = 1e10 * u.AA / u.m
 log2 = np.log(2)
+
+m_e_eV  = (cst.m_e.cgs*cst.c.cgs**2).value * u.erg * erg_to_eV  # mass of electron    in eV
 
 
 
@@ -109,6 +113,45 @@ def erg_hz_cm2_to_photon_units(erg_hz_cm2, wavelength):
     return (erg_hz_cm2 * 1/cst.h * 1e-7 * 1/wavelength).value * photon_units
 
 
+# helpful functions for coding (can move somewhere else later)
+
 def ttt(ti, s=""):
     elapsed_time = tt() - ti
-    # print(f"{s}: {elapsed_time:.5f} s")
+    print(f"{s}: {elapsed_time:.5f} s")
+
+
+def save_quant(quant, filename):
+    """
+    Save the quant dictionary to a file using pickle.
+    
+    Parameters:
+        filename (str): The file path where the dictionary will be saved.
+        quant (dict): The dictionary to save.
+    """
+    # Convert units to a serializable format (values and units separately)
+    serializable_quant = {
+        key: {"value": value.value.tolist(), "unit": str(value.unit)}
+        for key, value in quant.items()
+    }
+    # Save using pickle
+    with open(filename, 'wb') as f:
+        pickle.dump(serializable_quant, f)
+
+def load_quant(filename):
+    """
+    Load the quant dictionary from a file saved using `save_quant`.
+    
+    Parameters:
+        filename (str): The file path from which the dictionary will be loaded.
+        
+    Returns:
+        dict: The loaded quant dictionary with proper units restored.
+    """
+    with open(filename, 'rb') as f:
+        serialized_quant = pickle.load(f)
+    # Convert back to quantities with units
+    quant = {
+        key: np.array(data["value"]) * u.Unit(data["unit"])
+        for key, data in serialized_quant.items()
+    }
+    return quant

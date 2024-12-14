@@ -13,7 +13,7 @@ from survey_parameters import *
 
 from time import time as tt
 
-from multiprocessing import cpu_count
+
 
 
 band_min, band_max = 1300*u.AA, 1700*u.AA
@@ -120,7 +120,7 @@ quant = {
     'dv_neut':  np.array([0,0]) * u.km/u.s,
 }
 
-N = 3
+N = 5
 
 quant = {
     'dark_mat': np.random.uniform(0.2, 0.4, size=N) * u.GeV / u.cm**3 * GeV_to_g,
@@ -149,7 +149,6 @@ quant = {
 #     'dv_neut':  np.array([0]) * u.km/u.s,
 # }
 
-enforce_units(quant)
 
 
 # res = compute_epsilon_ionized_bandwidth_2(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, adjust_T_gas=False)
@@ -194,73 +193,40 @@ def compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, adjus
 
 # sigma_v, v_b = 50*u.km/u.s, 50*u.km/u.s
 
-def split_quant(quant, n_splits):
-    """Split the quant dictionary into n_splits batches."""
-    split_indices = np.array_split(range(len(quant["dark_mat"])), n_splits)
-    batches = []
-    for indices in split_indices:
-        batch = {key: val[indices] for key, val in quant.items()}
-        batches.append(batch)
-    return batches
-
-
-print(cpu_count())
-from joblib import Parallel, delayed
-
-
-def process_batch(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b):
-	print("!!!!!!!!!!!")
-	print(quant)
-
-	quant_count = len(quant["dark_mat"])
-
-	if quant_count == 0:
-		return []
-
-	batches = split_quant(quant, quant_count)
-
-	batch_results = []
-	for i in range(quant_count):
-		batch_results.append(quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
-			args=(batches[i], sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))[0])
-	return batch_results * epsilon_units/u.sr
-
-
-def compute_epsilon(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b, parallel=False):
-
-	if parallel:
-
-		cpu_count = 8 #cpu_count()
-		batches = split_quant(quant, cpu_count)
-
-		# print(batches)
-
-		batch_results = Parallel(n_jobs=cpu_count)(
-	        delayed(process_batch)(batch, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
-	        for batch in batches)
-
-		return batch_results
-
-	else:
-
-		quant_count = len(quant["dark_mat"])
-		batches = split_quant(quant, quant_count)
-
-		batch_results = []
-		for i in range(quant_count):
-			batch_results.append(quad(epsilon_velocity_integrand, 0.1, 1*(sigma_v.value+v_b.value), 
-				args=(batches[i], sigma_v.value, v_b.value, m_aqn_kg, band_min, band_max, adjust_T_gas))[0])
-		return batch_results * epsilon_units/u.sr
 
 # t=tt()
 # res = compute_epsilon_velocity_integral(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b)
 # print(res*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 # ttt(t,"2")
 
-# t=tt()
-res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, True)
-print("------------------------------------------------")
+N = 5
+
+quant = {
+    'dark_mat': np.random.uniform(0.2, 0.4, size=N) * u.GeV / u.cm**3 * GeV_to_g,
+    'ioni_gas': np.random.uniform(0.005, 0.02, size=N) * 1 / u.cm**3,
+    'neut_gas': np.random.uniform(0, 0.01, size=N) * 1 / u.cm**3,
+    'temp_ion': np.random.uniform(1e3, 1e5, size=N) * u.K,
+    'dv_ioni': np.random.uniform(50, 300, size=N) * u.km / u.s,
+    'dv_neut': np.random.uniform(0, 50, size=N) * u.km / u.s,
+}
+
+enforce_units(quant)
+
+
+t=tt()
+res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, False)
+ttt(t,"1")
 print(res)
+print("------------------------------------------------")
+
+
+
+t=tt()
+res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, True)
+ttt(t,"2")
+print(res)
+print("------------------------------------------------")
+
 # print(res*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 # ttt(t,"2")
 
