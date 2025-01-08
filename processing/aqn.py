@@ -381,6 +381,44 @@ def compute_epsilon_ionized_bandwidth(cubes_import, m_aqn_kg, band_min, band_max
     return cubes
 
 
+def compute_epsilon_ionized(cubes_import, m_aqn_kg, lambda_0, adjust_T_gas=True):
+
+    # t=tt()
+    #------------------------------------------------------#
+    cubes = cubes_import.copy()
+    enforce_units(cubes)
+    R_aqn_cm = calc_R_AQN(m_aqn_kg)
+    cubes["dark_mat"] = cubes["dark_mat"] * 2/5
+    #------------------------------------------------------#
+    # ttt(t, "cube copies & imports")
+
+    # t=tt()
+    #------------------------------------------------------#
+    # compute effective gas temperature
+    if adjust_T_gas:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] + 1/2 * cst.m_p * kg_to_eV * cubes["dv_ioni"]**2
+    else:
+        cubes["temp_ion_eff"] = cubes["temp_ion"] 
+
+    # compute AQN temperature
+    cubes["t_aqn_i"] = T_AQN_ionized2(  cubes["ioni_gas"], cubes["dv_ioni"], f, g, 
+                                        cubes["temp_ion_eff"], R_aqn_cm)
+    #------------------------------------------------------#
+    # ttt(t, "cube temp ion")   
+
+    # t=tt()
+    spectral_surface_emissivity_no_H_ = spectral_surface_emissivity_no_H(cubes["t_aqn_i"])
+    # ttt(t, "emissivity no H")
+    # t=tt()
+    # ttt(t, "bandwidth integral")
+    cubes["aqn_emit"] = spectral_surface_emissivity_no_H_ * func(lambda_0.value, cubes["t_aqn_i"].value)
+
+    cubes["aqn_emit"] = cubes["aqn_emit"] * 4 * np.pi * R_aqn_cm**2 * \
+                       (cubes["dark_mat"] / m_aqn_kg).to(1/u.cm**3) * u.sr
+
+    return cubes
+
+
 
 def epsilon_velocity_integrand(v, quant, sigma_v, v_b, m_aqn_kg, band_min, band_max, adjust_T_gas):
     # t=tt()
@@ -505,3 +543,23 @@ def compute_phi(quant, m_aqn_kg, nu):
     F = C * X**3 * (X/cst.m_e/cst.c**2)**(1/4) * H(2*np.pi*cst.hbar*nu/X)
     Phi = L*R**2*n_AQN*F/(2*np.pi*cst.hbar*lamb) * (1*u.m/(100*u.cm))**2
     return Phi
+
+
+
+def epsilon_velocity_integrand_no_bandwidth(v, quant, sigma_v, v_b, m_aqn_kg, lambda_0, adjust_T_gas):
+
+    f_res = f_maxbolt(v, sigma_v, v_b)
+
+    quant["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
+
+    e_res = compute_epsilon_ionized(quant, m_aqn_kg, lambda_0, adjust_T_gas)["aqn_emit"].value # _bandwidth
+
+    return e_res * f_res
+
+
+def compute_epsilon_no_bandwidth(quant, m_aqn_kg, lambda_0, adjust_T_gas, sigma_v, v_b):
+
+    return quad(epsilon_velocity_integrand_no_bandwidth, 0.1, 1*(sigma_v.value+v_b.value), 
+                args=(quant.copy(), sigma_v.value, v_b.value, m_aqn_kg, lambda_0, adjust_T_gas))[0]
+
+

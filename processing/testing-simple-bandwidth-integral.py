@@ -199,33 +199,33 @@ def compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, adjus
 # print(res*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 # ttt(t,"2")
 
-N = 5
+# N = 5
 
-quant = {
-    'dark_mat': np.random.uniform(0.2, 0.4, size=N) * u.GeV / u.cm**3 * GeV_to_g,
-    'ioni_gas': np.random.uniform(0.005, 0.02, size=N) * 1 / u.cm**3,
-    'neut_gas': np.random.uniform(0, 0.01, size=N) * 1 / u.cm**3,
-    'temp_ion': np.random.uniform(1e3, 1e5, size=N) * u.K,
-    'dv_ioni': np.random.uniform(50, 300, size=N) * u.km / u.s,
-    'dv_neut': np.random.uniform(0, 50, size=N) * u.km / u.s,
-}
+# quant = {
+#     'dark_mat': np.random.uniform(0.2, 0.4, size=N) * u.GeV / u.cm**3 * GeV_to_g,
+#     'ioni_gas': np.random.uniform(0.005, 0.02, size=N) * 1 / u.cm**3,
+#     'neut_gas': np.random.uniform(0, 0.01, size=N) * 1 / u.cm**3,
+#     'temp_ion': np.random.uniform(1e3, 1e5, size=N) * u.K,
+#     'dv_ioni': np.random.uniform(50, 300, size=N) * u.km / u.s,
+#     'dv_neut': np.random.uniform(0, 50, size=N) * u.km / u.s,
+# }
 
-enforce_units(quant)
-
-
-t=tt()
-res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, False)
-ttt(t,"1")
-print(res)
-print("------------------------------------------------")
+# enforce_units(quant)
 
 
+# t=tt()
+# res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, False)
+# ttt(t,"1")
+# print(res)
+# print("------------------------------------------------")
 
-t=tt()
-res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, True)
-ttt(t,"2")
-print(res)
-print("------------------------------------------------")
+
+
+# t=tt()
+# res = compute_epsilon(quant, m_aqn_kg, 1300*u.AA, 1700*u.AA, True, sigma_v, v_b, True)
+# ttt(t,"2")
+# print(res)
+# print("------------------------------------------------")
 
 # print(res*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 # ttt(t,"2")
@@ -311,65 +311,66 @@ n_splits = 3
 # 
 
 
-# quant = {
-#     'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
-#     'ioni_gas': np.array([0.01]) * 1/u.cm**3,
-#     'neut_gas': np.array([0]) * 1/u.cm**3, 
-#     'temp_ion': np.array([1e4]) * u.K, 
-#     'dv_ioni':  np.array([220]) * u.km/u.s, 
-#     'dv_neut':  np.array([0]) * u.km/u.s,
-# }
-# enforce_units(quant)
+quant = {
+    'dark_mat': np.array([0.3]) * u.GeV/u.cm**3 * GeV_to_g,
+    'ioni_gas': np.array([0.01]) * 1/u.cm**3,
+    'neut_gas': np.array([0]) * 1/u.cm**3, 
+    'temp_ion': np.array([1e4]) * u.K, 
+    'dv_ioni':  np.array([220]) * u.km/u.s, 
+    'dv_neut':  np.array([0]) * u.km/u.s,
+}
+enforce_units(quant)
 
-# m_aqn_kg = 16.7/1000 * u.kg
+m_aqn_kg = 16.7/1000 * u.kg
 
-# print("sigma_v = 50, v_b = 50, Phi = 40.22")
+print("sigma_v = 50, v_b = 50, Phi = 40.22")
 # print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
 #     True, 50*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
-# print("------------------------------------------------------")
+print("------------------------------------------------------")
 
-# print("sigma_v = 50, v_b = 50, Phi = 40.22")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 50*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print("sigma_v = 50, v_b = 50, Phi = 40.22")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 50*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print(" --> ", compute_epsilon_no_bandwidth(quant, m_aqn_kg, 1500*u.AA, 
+    True, 50*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
-
-# print("sigma_v = 100, v_b = 50, Phi = 7.524")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 100*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
-
-
-# print("sigma_v = 110, v_b = 180, Phi = 1.702")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 110*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print("sigma_v = 100, v_b = 50, Phi = 7.524")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 100*u.km/u.s, 50*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
-# print("sigma_v = 156, v_b = 180, Phi = 1.167")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 156*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print("sigma_v = 110, v_b = 180, Phi = 1.702")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 110*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
-# print("sigma_v = 50, v_b = 180, Phi = 0.1312")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 50*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print("sigma_v = 156, v_b = 180, Phi = 1.167")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 156*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
-# print("sigma_v = 500, v_b = 180, Phi = 0.06485")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 500*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print("sigma_v = 50, v_b = 180, Phi = 0.1312")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 50*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
-# print("sigma_v = 110, v_b = 500, Phi = 2.29831e-4")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 110*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print("sigma_v = 500, v_b = 180, Phi = 0.06485")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 500*u.km/u.s, 180*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
 
-# print("sigma_v = 500, v_b = 500, Phi = 0.04198")
-# print(" --> ", compute_epsilon_velocity_integral(quant, m_aqn_kg, band_min, band_max, 
-#     True, 500*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+print("sigma_v = 110, v_b = 500, Phi = 2.29831e-4")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 110*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
 
-# print("------------------------------------------------------")
+
+print("sigma_v = 500, v_b = 500, Phi = 0.04198")
+print(" --> ", compute_epsilon(quant, m_aqn_kg, band_min, band_max, 
+    True, 500*u.km/u.s, 500*u.km/u.s)*(0.6*u.kpc).to(u.cm)/(4*np.pi))
+
+print("------------------------------------------------------")
 
 
 
