@@ -100,13 +100,13 @@ def enforce_units(quant):
     quant["neut_gas"] = quant["neut_gas"].to(1/u.cm**3)
     if quant["temp_ion"].unit == u.K:
         quant["temp_ion"] = quant["temp_ion"] * K_to_eV
-    try: 
-        if quant["dv_ioni"].unit != u.dimensionless_unscaled:
-            quant["dv_ioni"] = (quant["dv_ioni"] / cst.c).to(u.dimensionless_unscaled)
-    except:
-        quant["dv_ioni"] = quant["dv_ioni"] * u.dimensionless_unscaled
-    if quant["dv_neut"].unit != u.dimensionless_unscaled:
-        quant["dv_neut"] = (quant["dv_neut"] / cst.c).to(u.dimensionless_unscaled)
+    # try: 
+    #     if quant["dv_ioni"].unit != u.dimensionless_unscaled:
+    #         quant["dv_ioni"] = (quant["dv_ioni"] / cst.c).to(u.dimensionless_unscaled)
+    # except:
+    #     quant["dv_ioni"] = quant["dv_ioni"] * u.dimensionless_unscaled
+    # if quant["dv_neut"].unit != u.dimensionless_unscaled:
+    #     quant["dv_neut"] = (quant["dv_neut"] / cst.c).to(u.dimensionless_unscaled)
 
 
 def erg_hz_cm2_to_photon_units(erg_hz_cm2, wavelength):
