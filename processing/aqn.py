@@ -421,20 +421,16 @@ def compute_epsilon_ionized(cubes_import, m_aqn_kg, lambda_0, adjust_T_gas=True)
 
 
 def epsilon_velocity_integrand(v, quant, sigma_v, v_b, m_aqn_kg, band_min, band_max, adjust_T_gas):
-    # t=tt()
-    f_res = f_maxbolt(v, sigma_v, v_b)
-    # ttt(t,"maxbolt")
+    
+    if quant["ioni_gas"].value < 1e-6:
+        return np.array([0])
 
-    # t=tt()
-    # quant_copy = quant.copy()
-    # quant_copy["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
-    # ttt(t,"quant copy")
+    else:
+        f_res = f_maxbolt(v, sigma_v, v_b)
+        quant["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
+        e_res = compute_epsilon_ionized_bandwidth(quant, m_aqn_kg, band_min, band_max, adjust_T_gas)["aqn_emit"].value # _bandwidth
 
-    quant["dv_ioni"] = (v*u.km/u.s) / cst.c.to(u.km/u.s)
-    # t=tt()
-    e_res = compute_epsilon_ionized_bandwidth(quant, m_aqn_kg, band_min, band_max, adjust_T_gas)["aqn_emit"].value # _bandwidth
-    # ttt(t,"bandwidth integral")
-    return e_res * f_res
+        return e_res * f_res
 
 
 
