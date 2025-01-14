@@ -155,3 +155,10 @@ def load_quant(filename):
         for key, data in serialized_quant.items()
     }
     return quant
+
+def compute_ioni_neut_gas(n_tot, Xe):
+    Xe_max = np.max(Xe)
+    n_ioni = n_tot * Xe
+    n_neut = n_tot * (Xe_max - Xe)
+    return n_ioni, n_neut
+    
