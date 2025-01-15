@@ -19,7 +19,7 @@ print(load_name)
 print(save_name)
 
 sigma_v = 156 * u.km/u.s
-v_b = 229 * u.km/u.s
+v_b = 180 * u.km/u.s
 # m_aqn_kg = 16.7/1000 * u.kg
 
 quant = load_quant("../data/filtered-location-voxels/"+load_name+".pkl")
