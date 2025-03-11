@@ -18,12 +18,12 @@ print(m_aqn_kg)
 print(load_name)
 print(save_name)
 
-v_b = 220 * u.km/u.s
-sigma_v = v_b / np.sqrt(2)
-
 # m_aqn_kg = 16.7/1000 * u.kg
 
 quant = load_quant("../data/filtered-location-voxels/"+load_name+".pkl")
+
+# modify dv to be unitless
+quant["dv_ioni"] = quant["dv"] / cst.c.to(u.km/u.s)
 
 print(">> loaded data")
 
@@ -34,7 +34,7 @@ print(">> successfully tested save location")
 
 print(">> computing epsilon...")
 t=tt()
-res = compute_epsilon(quant, m_aqn_kg, wavel_min, wavel_max, True, sigma_v, v_b, use_fire_dv=False, parallel=True)
+res = compute_epsilon(quant, m_aqn_kg, wavel_min, wavel_max, True, sigma_v=1, v_b=1, use_fire_dv=True, parallel=True)
 print(">> done!")
 ttt(t,"time taken")
 
