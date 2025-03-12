@@ -495,7 +495,7 @@ def process_batch_FIRE_dv(quant, m_aqn_kg, band_min, band_max, adjust_T_gas):
 
         for i in range(quant_count):
             
-            batch_results.append(compute_epsilon_ionized_bandwidth(quant, m_aqn_kg, band_min, band_max, adjust_T_gas)["aqn_emit"].value)
+            batch_results.append(compute_epsilon_ionized_bandwidth(quant, m_aqn_kg, band_min, band_max, adjust_T_gas)["aqn_emit"][0].value)
 
         return batch_results * epsilon_units/u.sr
 
@@ -516,7 +516,7 @@ def compute_epsilon(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, 
             batch_results = Parallel(n_jobs=cpu_num)(
                 delayed(process_batch)(batch, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
                 for batch in batches)
-        
+
         # concatenate non-empty arrays
         return np.concatenate([batch for batch in batch_results if len(batch) > 0], axis=0)
 
