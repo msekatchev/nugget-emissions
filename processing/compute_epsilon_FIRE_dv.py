@@ -24,6 +24,7 @@ quant = load_quant("../data/filtered-location-voxels/"+load_name+".pkl")
 
 # modify dv to be unitless
 quant["dv_ioni"] = quant["dv"] / cst.c.to(u.km/u.s)
+quant["ioni_gas"] = quant["ioni_gas_c"]
 
 print(">> loaded data")
 
