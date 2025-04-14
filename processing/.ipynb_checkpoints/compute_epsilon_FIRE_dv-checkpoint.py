@@ -10,6 +10,10 @@ from survey_parameters import *
 
 # sample usage:
 # python3 compute_epsilon.py 0.16 test_save.pkl
+# python3 compute_epsilon_FIRE_dv.py 0.5 april-12-2025/cubes april-12-2025/m-0_5kg-FIRE-dv
+# python3 compute_epsilon_FIRE_dv.py 0.1 april-12-2025/cubes april-12-2025/m-0_1kg-FIRE-dv
+# python3 compute_epsilon_FIRE_dv.py 0.01 april-12-2025/cubes april-12-2025/m-0_01kg-FIRE-dv
+
 m_aqn_kg = float(sys.argv[1]) * u.kg
 load_name = sys.argv[2]
 save_name = sys.argv[3]
@@ -22,9 +26,12 @@ print(save_name)
 
 quant = load_quant("../data/filtered-location-voxels/"+load_name+".pkl")
 
+# print(quant["dv"])
 # modify dv to be unitless
-quant["dv_ioni"] = quant["dv"] / cst.c.to(u.km/u.s)
-
+# quant["dv_ioni"] = quant["dv"] / cst.c.to(u.km/u.s)
+quant["dv_ioni"] = (quant["dv"] / cst.c).to(u.dimensionless_unscaled)
+# quant["ioni_gas"] = quant["ioni_gas_c"]
+# enforce_units(quant)
 print(">> loaded data")
 
 quant["aqn_emit"] = quant["dark_mat"].copy() / quant["dark_mat"] * u.K

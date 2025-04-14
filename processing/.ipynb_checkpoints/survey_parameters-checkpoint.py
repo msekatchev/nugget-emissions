@@ -5,10 +5,14 @@ print("Loaded survey parameters script")
 
 # define bandwidth
 
-# ############### GALEX #########################################
+############### GALEX #########################################
 # Source: Henry 2015
 wavel_min = 1350 * u.Angstrom
 wavel_max = 1750 * u.Angstrom
+
+wavel_min = 1300 * u.Angstrom
+wavel_max = 1700 * u.Angstrom
+
 f_max_hz = (cst.c.cgs / wavel_min.to(u.cm)).to(u.Hz)
 f_min_hz = (cst.c.cgs / wavel_max.to(u.cm)).to(u.Hz)
 skymap_units =  1*u.photon / u.cm**2 / u.s / u.Angstrom

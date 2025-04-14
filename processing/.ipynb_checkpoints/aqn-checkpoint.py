@@ -325,9 +325,9 @@ def spectral_surface_emissivity_no_H(T_in):
 def integrate_func(func, band_min, band_max, kT):
 
     lamb_range = band_max - band_min
-    integral = quad_vec(func, band_min.value, band_max.value, args=(kT.value,),
-        epsabs=1e-9, epsrel=1e-9)[0]
-
+    integral = quad_vec(func, band_min.value, band_max.value, args=(kT.value,))[0]
+    # quad_vec when using FIRE_dv, quad when using Max Boltz. This is because FIRE_dv comp
+    # can be parallelized
     return 1 / lamb_range.value * integral * photon_units/erg_hz_cm2/u.sr
 
 
@@ -478,25 +478,53 @@ def process_batch(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_
 
         return batch_results * epsilon_units/u.sr
 
+# (v*u.km/u.s) / cst.c.to(u.km/u.s)
+
+def process_batch_FIRE_dv(quant, m_aqn_kg, band_min, band_max, adjust_T_gas):
+        
+    quant_count = len(quant["dark_mat"])
+    
+    if quant_count == 0:
+        
+        return []
+        
+    else:
+        batches = split_quant(quant, quant_count)
+        
+        batch_results = []
+
+        for i in range(quant_count):
+            
+            batch_results.append(compute_epsilon_ionized_bandwidth(quant, m_aqn_kg, band_min, band_max, adjust_T_gas)["aqn_emit"][0].value)
+
+        return batch_results * epsilon_units/u.sr
 
 
-def compute_epsilon(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b, parallel=False):
+
+def compute_epsilon(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b, use_fire_dv=False, parallel=False):
 
     if parallel:
         
         cpu_num = cpu_count()
         batches = split_quant(quant, cpu_num)
         
-        batch_results = Parallel(n_jobs=cpu_num)(
-            delayed(process_batch)(batch, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
-            for batch in batches)
-        
+        if use_fire_dv:
+            batch_results = Parallel(n_jobs=cpu_num)(
+                delayed(process_batch_FIRE_dv)(batch, m_aqn_kg, band_min, band_max, adjust_T_gas)
+                for batch in batches)
+        else:
+            batch_results = Parallel(n_jobs=cpu_num)(
+                delayed(process_batch)(batch, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
+                for batch in batches)
+
         # concatenate non-empty arrays
         return np.concatenate([batch for batch in batch_results if len(batch) > 0], axis=0)
 
     else:
-
-        return process_batch(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
+        if use_fire_dv:
+            return process_batch_FIRE_dv(quant, m_aqn_kg, band_min, band_max, adjust_T_gas)
+        else:
+            return process_batch(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, v_b)
 
 
 

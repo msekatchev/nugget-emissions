@@ -5,7 +5,7 @@ print("Loaded survey parameters script")
 
 # define bandwidth
 
-# ############### GALEX #########################################
+############### GALEX #########################################
 # Source: Henry 2015
 wavel_min = 1350 * u.Angstrom
 wavel_max = 1750 * u.Angstrom

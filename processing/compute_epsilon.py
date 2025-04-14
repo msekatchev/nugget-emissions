@@ -11,6 +11,11 @@ from survey_parameters import *
 # sample usage:
 # python3 compute_epsilon.py 0.16 test_save.pkl
 # python3 compute_epsilon.py 0.5 march-11-2025/cubes march-11-2025/m-0_5kg-original
+
+# python3 compute_epsilon.py 0.5 april-12-2025/cubes april-12-2025/m-0_5kg-original
+# python3 compute_epsilon.py 0.1 april-12-2025/cubes april-12-2025/m-0_1kg-original
+# python3 compute_epsilon.py 0.01 april-12-2025/cubes april-12-2025/m-0_01kg-original
+
 m_aqn_kg = float(sys.argv[1]) * u.kg
 load_name = sys.argv[2]
 save_name = sys.argv[3]
@@ -26,7 +31,7 @@ sigma_v = v_b / np.sqrt(2)
 
 quant = load_quant("../data/filtered-location-voxels/"+load_name+".pkl")
 
-quant["ioni_gas"] = quant["ioni_gas_c"]
+# quant["ioni_gas"] = quant["ioni_gas_c"]
 
 print(">> loaded data")
 

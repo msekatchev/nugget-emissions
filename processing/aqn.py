@@ -325,9 +325,9 @@ def spectral_surface_emissivity_no_H(T_in):
 def integrate_func(func, band_min, band_max, kT):
 
     lamb_range = band_max - band_min
-    integral = quad_vec(func, band_min.value, band_max.value, args=(kT.value,),
-        epsabs=1e-9, epsrel=1e-9)[0]
-
+    integral = quad_vec(func, band_min.value, band_max.value, args=(kT.value,))[0]
+    # quad_vec when using FIRE_dv, quad when using Max Boltz. This is because FIRE_dv comp
+    # can be parallelized
     return 1 / lamb_range.value * integral * photon_units/erg_hz_cm2/u.sr
 
 

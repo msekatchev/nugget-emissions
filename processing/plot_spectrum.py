@@ -1,3 +1,5 @@
+# Plot AQN broadband signal
+
 import numpy as np
 from astropy import constants as cst
 from astropy import units as u
