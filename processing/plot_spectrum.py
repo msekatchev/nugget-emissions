@@ -1,4 +1,4 @@
-# Plot AQN broadband signal
+# Plot AQN broadband signal for a set of AQN masses
 
 import numpy as np
 from astropy import constants as cst
