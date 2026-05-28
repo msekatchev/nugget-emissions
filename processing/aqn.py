@@ -529,7 +529,7 @@ def compute_epsilon(quant, m_aqn_kg, band_min, band_max, adjust_T_gas, sigma_v, 
 
 
 # Define the function f(v) based on the Maxwell-Boltzmann distribution with a velocity shift v_b
-def f_maxbolt(v, sigma_v=156, v_b=180):
+def f_maxbolt(v, sigma_v=122, v_b=0):  # changes 
     # v, sigma_v, v_b = v, sigma_v.value, v_b.value
     prefactor = 4 * np.pi * v**2 * (1 / (2 * np.pi * sigma_v**2))**(3/2)
     exponential = np.exp(-(v**2 + v_b**2) / (2 * sigma_v**2))
